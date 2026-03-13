@@ -1,0 +1,2699 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Sistema de Controle de Condomínio - Cloud</title>
+    
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 10px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            width: 100%;
+            max-width: 1100px;
+            overflow: hidden;
+            animation: slideUp 0.5s ease-out;
+            position: relative;
+        }
+
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            text-align: center;
+            position: relative;
+        }
+
+        .header h1 {
+            font-size: 20px;
+            margin-bottom: 5px;
+        }
+
+        .header p {
+            opacity: 0.9;
+            font-size: 12px;
+        }
+
+        .user-info-header {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: rgba(255,255,255,0.2);
+            padding: 6px 12px;
+            border-radius: 15px;
+            font-size: 11px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            backdrop-filter: blur(10px);
+        }
+
+        .sync-status {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: rgba(255,255,255,0.2);
+            padding: 6px 12px;
+            border-radius: 15px;
+            font-size: 11px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            backdrop-filter: blur(10px);
+            cursor: pointer;
+        }
+
+        .sync-status.online { background: rgba(39, 174, 96, 0.3); }
+        .sync-status.offline { background: rgba(231, 76, 60, 0.3); }
+        .sync-status.syncing { background: rgba(243, 156, 18, 0.3); }
+
+        @media (max-width: 768px) {
+            .user-info-header, .sync-status {
+                position: static;
+                margin-top: 10px;
+                justify-content: center;
+                font-size: 10px;
+            }
+            .header h1 { font-size: 16px; }
+        }
+
+        .form-container { padding: 20px; }
+        .form-section { display: none; }
+        .form-section.active { display: block; animation: fadeIn 0.4s ease; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .form-group { margin-bottom: 15px; }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            color: #333;
+            font-weight: 600;
+            font-size: 13px;
+        }
+
+        input, select, textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 16px; /* Prevents zoom on iOS */
+            transition: all 0.3s ease;
+            font-family: inherit;
+            -webkit-appearance: none;
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: #667eea;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.2);
+        }
+
+        .btn {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 10px;
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+
+        .btn:active { transform: scale(0.98); }
+        .btn:hover { transform: translateY(-2px); box-shadow: 0 10px 25px rgba(102, 126, 234, 0.4); }
+
+        .btn-secondary { background: #f0f0f0; color: #333; }
+        .btn-secondary:hover { background: #e0e0e0; }
+        .btn-danger { background: #e74c3c; }
+        .btn-danger:hover { background: #c0392b; }
+        .btn-success { background: #27ae60; }
+        .btn-success:hover { background: #229954; }
+        .btn-dark { background: #2c3e50; }
+        .btn-dark:hover { background: #34495e; }
+
+        .btn-small {
+            padding: 8px 12px;
+            font-size: 12px;
+            width: auto;
+            margin: 0 3px;
+        }
+
+        .link {
+            text-align: center;
+            margin-top: 15px;
+            color: #667eea;
+            cursor: pointer;
+            font-size: 14px;
+            text-decoration: underline;
+        }
+
+        .dashboard {
+            display: none;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .dashboard.active { display: block; }
+
+        .menu-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .menu-item {
+            background: #f8f9fa;
+            padding: 15px 10px;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+            touch-action: manipulation;
+        }
+
+        .menu-item:hover, .menu-item:active {
+            border-color: #667eea;
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .menu-item.lixeira {
+            background: #2c3e50;
+            color: white;
+        }
+
+        .menu-item.lixeira:hover {
+            border-color: #e74c3c;
+            background: #34495e;
+        }
+
+        .back-btn {
+            background: none;
+            border: none;
+            color: #667eea;
+            cursor: pointer;
+            font-size: 14px;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            padding: 5px;
+        }
+
+        .table-container {
+            overflow-x: auto;
+            margin-top: 15px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            -webkit-overflow-scrolling: touch;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            font-size: 12px;
+            min-width: 600px;
+        }
+
+        th {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 12px 8px;
+            text-align: left;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+
+        .readonly-table th {
+            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+        }
+
+        td {
+            padding: 10px 8px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        tr:hover { background: #f8f9fa; }
+
+        .badge {
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 10px;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+
+        .badge-PR { background: #d4edda; color: #155724; }
+        .badge-IN { background: #fff3cd; color: #856404; }
+        .badge-MO { background: #cce5ff; color: #004085; }
+        .badge-entrada { background: #d4edda; color: #155724; }
+        .badge-saida { background: #f8d7da; color: #721c24; }
+        .badge-entregue { background: #d4edda; color: #155724; }
+        .badge-pendente { background: #fff3cd; color: #856404; }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px;
+            border-radius: 12px;
+            text-align: left;
+        }
+
+        .stat-card h3 { font-size: 11px; opacity: 0.9; margin-bottom: 5px; }
+        .stat-card .value { font-size: 20px; font-weight: bold; }
+        .stat-card.green { background: linear-gradient(135deg, #27ae60 0%, #229954 100%); }
+        .stat-card.red { background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%); }
+        .stat-card.orange { background: linear-gradient(135deg, #f39c12 0%, #e67e22 100%); }
+        .stat-card.dark { background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%); }
+        .stat-card.gray { background: linear-gradient(135deg, #95a5a6 0%, #7f8c8d 100%); }
+
+        .tabs {
+            display: flex;
+            gap: 5px;
+            margin-bottom: 15px;
+            border-bottom: 2px solid #e0e0e0;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .tab {
+            padding: 10px 15px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+            color: #666;
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s;
+            white-space: nowrap;
+            font-size: 13px;
+        }
+
+        .tab.active {
+            color: #667eea;
+            border-bottom-color: #667eea;
+        }
+
+        .tabs.lixeira-tabs .tab.active {
+            color: #2c3e50;
+            border-bottom-color: #2c3e50;
+        }
+
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .modal.active { display: flex; }
+
+        .modal-content {
+            background: white;
+            padding: 20px;
+            border-radius: 15px;
+            max-width: 500px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+            animation: slideUp 0.3s ease;
+        }
+
+        .user-registrando-info {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 10px 12px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 12px;
+        }
+
+        .lixeira-info {
+            background: #2c3e50;
+            color: white;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            font-size: 12px;
+        }
+
+        .item-excluido { opacity: 0.9; background: #f8f9fa; }
+        .data-exclusao { font-size: 10px; color: #e74c3c; font-weight: 600; }
+        .quem-excluiu { font-size: 10px; color: #666; font-style: italic; }
+
+        .search-box {
+            margin-bottom: 15px;
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .search-box input, .search-box select {
+            flex: 1;
+            min-width: 120px;
+        }
+
+        .filter-group {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 10px;
+            flex-wrap: wrap;
+        }
+
+        .filter-group select, .filter-group input {
+            flex: 1;
+            min-width: 100px;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 30px;
+            color: #666;
+        }
+
+        .empty-state-icon { font-size: 40px; margin-bottom: 10px; }
+
+        .action-btns { display: flex; gap: 3px; }
+
+        .btn-icon {
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 16px;
+            padding: 5px;
+            border-radius: 5px;
+            transition: all 0.2s;
+        }
+
+        .btn-icon:active { background: #e0e0e0; }
+
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255,255,255,0.9);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+            flex-direction: column;
+        }
+
+        .loading-overlay.active { display: flex; }
+
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Mobile optimizations */
+        @media (max-width: 480px) {
+            body { padding: 5px; }
+            .container { border-radius: 15px; }
+            .form-container { padding: 15px; }
+            .menu-grid { grid-template-columns: repeat(2, 1fr); }
+            th, td { padding: 8px 5px; font-size: 11px; }
+            .btn { padding: 12px; font-size: 15px; }
+            .stats-grid { grid-template-columns: repeat(2, 1fr); }
+            .stat-card { padding: 12px; }
+            .stat-card .value { font-size: 16px; }
+        }
+
+        .quick-actions {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+
+        .quick-actions .btn {
+            flex: 1;
+            min-width: 120px;
+            margin: 0;
+        }
+
+        .config-section {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+        }
+
+        .config-section h3 {
+            margin-bottom: 12px;
+            color: #333;
+            font-size: 14px;
+        }
+
+        .hidden-field { display: none; }
+        .hidden-field.show { display: block; }
+
+        .success-message, .error-message {
+            padding: 12px;
+            border-radius: 8px;
+            margin: 15px 20px 0;
+            display: none;
+            font-size: 13px;
+        }
+
+        .success-message { background: #d4edda; color: #155724; }
+        .error-message { background: #f8d7da; color: #721c24; }
+
+        .datetime-display {
+            background: #f8f9fa;
+            padding: 8px;
+            border-radius: 8px;
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        @media (max-width: 480px) {
+            .grid-2 { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <!-- Loading Overlay -->
+    <div id="loading" class="loading-overlay">
+        <div class="spinner"></div>
+        <p style="margin-top: 15px; color: #666;">Sincronizando...</p>
+    </div>
+
+    <div class="container">
+        <!-- Cabeçalho -->
+        <div class="header">
+            <div class="sync-status online" id="sync-status" onclick="verificarConexao()">
+                <span id="sync-icon">🟢</span>
+                <span id="sync-text">Online</span>
+            </div>
+            <div class="user-info-header" id="header-user-info" style="display: none;">
+                <span>👤</span>
+                <div>
+                    <div style="font-weight: 600;" id="header-user-name">-</div>
+                    <div style="font-size: 9px; opacity: 0.8;">Sincronizado</div>
+                </div>
+            </div>
+            <h1>🏢 Condomínio Cloud</h1>
+            <p id="header-subtitle">Sistema Multi-Dispositivo</p>
+        </div>
+
+        <div id="success-msg" class="success-message"></div>
+        <div id="error-msg" class="error-message"></div>
+
+        <!-- Tela de Configuração Firebase -->
+        <div id="form-config-firebase" class="form-section active">
+            <div class="form-container">
+                <h2 style="margin-bottom: 20px; color: #333; font-size: 18px;">🔧 Configuração Inicial</h2>
+                
+                <div class="config-section">
+                    <h3>1. Crie uma conta gratuita no Firebase</h3>
+                    <p style="font-size: 12px; color: #666; margin-bottom: 10px;">
+                        Acesse <a href="https://console.firebase.google.com" target="_blank">console.firebase.google.com</a> 
+                        e crie um projeto gratuito.
+                    </p>
+                </div>
+
+                <div class="config-section">
+                    <h3>2. Cole as configurações do Firebase</h3>
+                    <p style="font-size: 11px; color: #666; margin-bottom: 10px;">
+                        Em Configurações > Geral > Seus aplicativos > SDK do Firebase
+                    </p>
+                    <div class="form-group">
+                        <label>apiKey</label>
+                        <input type="text" id="firebase-apiKey" placeholder="AIzaSy..." value="">
+                    </div>
+                    <div class="form-group">
+                        <label>databaseURL</label>
+                        <input type="text" id="firebase-databaseURL" placeholder="https://seu-projeto.firebaseio.com" value="">
+                    </div>
+                    <div class="form-group">
+                        <label>projectId</label>
+                        <input type="text" id="firebase-projectId" placeholder="seu-projeto-123" value="">
+                    </div>
+                    <button class="btn" onclick="salvarConfigFirebase()">💾 Salvar Configuração</button>
+                </div>
+
+                <div class="config-section" style="background: #e8f5e9;">
+                    <h3>💡 Dica</h3>
+                    <p style="font-size: 11px; color: #666;">
+                        Esta configuração precisa ser feita apenas uma vez. 
+                        Em outros dispositivos, use o mesmo projeto Firebase para sincronizar tudo.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Login/Cadastro -->
+        <div id="form-login" class="form-section">
+            <div class="form-container">
+                <h2 style="margin-bottom: 20px; color: #333; font-size: 18px;">Acessar Sistema</h2>
+                <form id="loginForm">
+                    <div class="form-group">
+                        <label>Email do Condomínio</label>
+                        <input type="email" id="login-email" required placeholder="condominio@email.com">
+                    </div>
+                    <div class="form-group">
+                        <label>Senha</label>
+                        <input type="password" id="login-senha" required placeholder="Sua senha" minlength="6">
+                    </div>
+                    <button type="submit" class="btn">Entrar</button>
+                </form>
+                <p class="link" onclick="mostrarForm('cadastro-usuario')">Criar nova conta</p>
+                <p class="link" onclick="mostrarForm('config-firebase')" style="font-size: 12px; color: #999;">Reconfigurar Firebase</p>
+            </div>
+        </div>
+
+        <!-- Cadastro de Usuário -->
+        <div id="form-cadastro-usuario" class="form-section">
+            <div class="form-container">
+                <h2 style="margin-bottom: 20px; color: #333; font-size: 18px;">Criar Conta</h2>
+                <form id="cadastroForm">
+                    <div class="form-group">
+                        <label>Nome de Usuário</label>
+                        <input type="text" id="novo-usuario" required placeholder="Seu nome">
+                    </div>
+                    <div class="form-group">
+                        <label>Email do Condomínio</label>
+                        <input type="email" id="novo-email" required placeholder="condominio@email.com">
+                    </div>
+                    <div class="form-group">
+                        <label>Senha (mín. 6 caracteres)</label>
+                        <input type="password" id="nova-senha" required placeholder="Crie uma senha" minlength="6">
+                    </div>
+                    <div class="form-group">
+                        <label>Confirmar Senha</label>
+                        <input type="password" id="confirmar-senha" required placeholder="Repita a senha">
+                    </div>
+                    <button type="submit" class="btn">Cadastrar</button>
+                </form>
+                <p class="link" onclick="mostrarForm('login')">Já tem conta? Faça login</p>
+            </div>
+        </div>
+
+        <!-- Dashboard -->
+        <div id="dashboard" class="dashboard">
+            <h2 style="margin-bottom: 10px; color: #333; font-size: 18px;">Bem-vindo, <span id="user-name"></span>!</h2>
+            <p style="color: #666; margin-bottom: 20px; font-size: 13px;">Escolha uma opção:</p>
+            
+            <div class="menu-grid">
+                <div class="menu-item" onclick="mostrarForm('cadastro-morador')">
+                    <div style="font-size: 24px; margin-bottom: 5px;">👤</div>
+                    <h3 style="font-size: 11px;">Cadastrar Morador</h3>
+                </div>
+                <div class="menu-item" onclick="mostrarForm('lista-moradores')">
+                    <div style="font-size: 24px; margin-bottom: 5px;">📋</div>
+                    <h3 style="font-size: 11px;">Lista Moradores</h3>
+                </div>
+                <div class="menu-item" onclick="mostrarForm('visitantes')">
+                    <div style="font-size: 24px; margin-bottom: 5px;">🚶</div>
+                    <h3 style="font-size: 11px;">Visitantes</h3>
+                </div>
+                <div class="menu-item" onclick="mostrarForm('deliveres')">
+                    <div style="font-size: 24px; margin-bottom: 5px;">🛵</div>
+                    <h3 style="font-size: 11px;">Deliveres</h3>
+                </div>
+                <div class="menu-item" onclick="mostrarForm('encomendas')">
+                    <div style="font-size: 24px; margin-bottom: 5px;">📦</div>
+                    <h3 style="font-size: 11px;">Encomendas</h3>
+                </div>
+                <div class="menu-item" onclick="mostrarForm('financeiro')">
+                    <div style="font-size: 24px; margin-bottom: 5px;">💰</div>
+                    <h3 style="font-size: 11px;">Financeiro</h3>
+                </div>
+                <div class="menu-item" onclick="mostrarForm('configuracoes')">
+                    <div style="font-size: 24px; margin-bottom: 5px;">⚙️</div>
+                    <h3 style="font-size: 11px;">Configurações</h3>
+                </div>
+                <div class="menu-item lixeira" onclick="mostrarForm('lixeira')">
+                    <div style="font-size: 24px; margin-bottom: 5px;">🗑️</div>
+                    <h3 style="font-size: 11px;">Lixeira</h3>
+                </div>
+            </div>
+            
+            <button class="btn btn-secondary" onclick="logout()" style="margin-top: 20px;">Sair</button>
+        </div>
+
+        <!-- Cadastro de Morador -->
+        <div id="form-cadastro-morador" class="form-section">
+            <div class="form-container">
+                <button class="back-btn" onclick="mostrarForm('dashboard')">← Voltar</button>
+                <h2 style="margin-bottom: 20px; color: #333; font-size: 18px;">Cadastro de Morador</h2>
+                
+                <div class="user-registrando-info">
+                    <span style="opacity: 0.9; font-size: 11px;">👤 Registrando como:</span>
+                    <span style="font-weight: 600; font-size: 12px;" id="morador-user-logado">-</span>
+                </div>
+                
+                <form id="moradorForm">
+                    <div class="form-group">
+                        <label>ID</label>
+                        <input type="text" id="morador-id" readonly placeholder="Gerado automaticamente">
+                    </div>
+                    <div class="form-group">
+                        <label>Nome Completo *</label>
+                        <input type="text" id="morador-nome" required placeholder="Nome do morador">
+                    </div>
+                    <div class="form-group">
+                        <label>Telefone *</label>
+                        <input type="tel" id="morador-telefone" required placeholder="(00) 00000-0000">
+                    </div>
+                    <div class="grid-2">
+                        <div class="form-group">
+                            <label>Rua *</label>
+                            <input type="text" id="morador-rua" required placeholder="Nome da rua">
+                        </div>
+                        <div class="form-group">
+                            <label>Número *</label>
+                            <input type="text" id="morador-numero" required placeholder="Nº">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Situação *</label>
+                        <select id="morador-situacao" required onchange="toggleLocatarioFields()">
+                            <option value="">Selecione...</option>
+                            <option value="PR">Proprietário (PR)</option>
+                            <option value="IN">Inquilino/Locatário (IN)</option>
+                            <option value="MO">Morador (MO)</option>
+                        </select>
+                    </div>
+                    <div id="locatario-fields" class="hidden-field">
+                        <div class="grid-2">
+                            <div class="form-group">
+                                <label>Data Entrada</label>
+                                <input type="date" id="data-entrada">
+                            </div>
+                            <div class="form-group">
+                                <label>Nº Contrato</label>
+                                <input type="text" id="numero-contrato" placeholder="Nº contrato">
+                            </div>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn">💾 Salvar na Nuvem</button>
+                    <button type="button" class="btn btn-secondary" onclick="mostrarForm('dashboard')">Cancelar</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Lista de Moradores -->
+        <div id="form-lista-moradores" class="form-section">
+            <div class="form-container">
+                <button class="back-btn" onclick="mostrarForm('dashboard')">← Voltar</button>
+                <h2 style="margin-bottom: 20px; color: #333; font-size: 18px;">Lista de Moradores</h2>
+                
+                <div class="search-box">
+                    <input type="text" id="search-morador" placeholder="Buscar..." onkeyup="filtrarMoradores()">
+                    <select id="filter-situacao" onchange="filtrarMoradores()">
+                        <option value="">Todos</option>
+                        <option value="PR">Proprietário</option>
+                        <option value="IN">Inquilino</option>
+                        <option value="MO">Morador</option>
+                    </select>
+                </div>
+                
+                <div class="table-container">
+                    <table id="tabela-moradores">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Nome</th>
+                                <th>Telefone</th>
+                                <th>Endereço</th>
+                                <th>Sit.</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="lista-moradores-body">
+                        </tbody>
+                    </table>
+                </div>
+                
+                <div id="empty-moradores" class="empty-state" style="display: none;">
+                    <div class="empty-state-icon">📭</div>
+                    <p>Nenhum morador cadastrado</p>
+                </div>
+                
+                <div class="quick-actions" style="margin-top: 15px;">
+                    <button class="btn btn-success btn-small" onclick="exportarCSV()">📊 Exportar</button>
+                    <button class="btn btn-small" onclick="mostrarForm('cadastro-morador')">+ Novo</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Visitantes -->
+        <div id="form-visitantes" class="form-section">
+            <div class="form-container">
+                <button class="back-btn" onclick="mostrarForm('dashboard')">← Voltar</button>
+                <h2 style="margin-bottom: 20px; color: #333; font-size: 18px;">🚶 Visitantes</h2>
+                
+                <div class="stats-grid">
+                    <div class="stat-card green">
+                        <h3>Entradas Hoje</h3>
+                        <div class="value" id="visitas-entradas-hoje">0</div>
+                    </div>
+                    <div class="stat-card orange">
+                        <h3>Dentro</h3>
+                        <div class="value" id="visitas-dentro">0</div>
+                    </div>
+                    <div class="stat-card red">
+                        <h3>Saídas Hoje</h3>
+                        <div class="value" id="visitas-saidas-hoje">0</div>
+                    </div>
+                </div>
+                
+                <div class="tabs">
+                    <button class="tab active" onclick="switchTabVisitantes('registrar')">Registrar</button>
+                    <button class="tab" onclick="switchTabVisitantes('lista')">Dentro</button>
+                    <button class="tab" onclick="switchTabVisitantes('historico')">Histórico</button>
+                </div>
+                
+                <div id="tab-visitantes-registrar" class="tab-content active">
+                    <div class="datetime-display" id="current-datetime-visitante">Data: --</div>
+                    <div class="user-registrando-info">
+                        <span style="font-size: 11px;">👤 Registrando como:</span>
+                        <span style="font-size: 12px;" id="visitante-user-logado">-</span>
+                    </div>
+                    <form id="visitanteForm">
+                        <div class="grid-2">
+                            <div class="form-group">
+                                <label>Nome *</label>
+                                <input type="text" id="visitante-nome" required placeholder="Nome completo">
+                            </div>
+                            <div class="form-group">
+                                <label>Documento</label>
+                                <input type="text" id="visitante-documento" placeholder="RG/CPF">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Visitando (Morador) *</label>
+                            <select id="visitante-morador" required>
+                                <option value="">Selecione...</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Motivo</label>
+                            <select id="visitante-motivo">
+                                <option value="">Selecione...</option>
+                                <option value="social">Visita Social</option>
+                                <option value="familia">Familiar</option>
+                                <option value="servico">Serviço</option>
+                                <option value="comercial">Comercial</option>
+                                <option value="outro">Outro</option>
+                            </select>
+                        </div>
+                        <button type="submit" class="btn">☁️ Salvar na Nuvem</button>
+                    </form>
+                </div>
+                
+                <div id="tab-visitantes-lista" class="tab-content">
+                    <div class="table-container">
+                        <table id="tabela-visitantes">
+                            <thead>
+                                <tr>
+                                    <th>Nome</th>
+                                    <th>Visitando</th>
+                                    <th>Entrada</th>
+                                    <th>Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody id="lista-visitantes-body"></tbody>
+                        </table>
+                    </div>
+                </div>
+                
+                <div id="tab-visitantes-historico" class="tab-content">
+                    <div class="filter-group">
+                        <input type="date" id="filtro-data-visita" onchange="carregarHistoricoVisitantes()">
+                    </div>
+                    <div class="table-container">
+                        <table id="tabela-historico-visitantes">
+                            <thead>
+                                <tr>
+                                    <th>Data/Hora</th>
+                                    <th>Nome</th>
+                                    <th>Tipo</th>
+                                    <th>Tempo</th>
+                                </tr>
+                            </thead>
+                            <tbody id="lista-historico-visitantes-body"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Deliveres -->
+        <div id="form-deliveres" class="form-section">
+            <div class="form-container">
+                <button class="back-btn" onclick="mostrarForm('dashboard')">← Voltar</button>
+                <h2 style="margin-bottom: 20px; color: #333; font-size: 18px;">🛵 Deliveres</h2>
+                
+                <div class="stats-grid">
+                    <div class="stat-card dark"><h3>Entradas Hoje</h3><div class="value" id="deliveres-entradas-hoje">0</div></div>
+                    <div class="stat-card orange"><h3>Em Entrega</h3><div class="value" id="deliveres-dentro">0</div></div>
+                    <div class="stat-card green"><h3>Concluídas</h3><div class="value" id="deliveres-concluidas-hoje">0</div></div>
+                </div>
+                
+                <div class="tabs">
+                    <button class="tab active" onclick="switchTabDeliveres('registrar')">Registrar</button>
+                    <button class="tab" onclick="switchTabDeliveres('em-entrega')">Em Entrega</button>
+                    <button class="tab" onclick="switchTabDeliveres('historico')">Histórico</button>
+                </div>
+                
+                <div id="tab-deliveres-registrar" class="tab-content active">
+                    <div class="datetime-display" id="current-datetime-deliver">Data: --</div>
+                    <div class="user-registrando-info">
+                        <span style="font-size: 11px;">👤 Registrando como:</span>
+                        <span style="font-size: 12px;" id="deliver-user-logado">-</span>
+                    </div>
+                    <form id="deliverForm">
+                        <div class="grid-2">
+                            <div class="form-group">
+                                <label>Nome Entregador *</label>
+                                <input type="text" id="deliver-nome" required placeholder="Nome">
+                            </div>
+                            <div class="form-group">
+                                <label>Plataforma *</label>
+                                <select id="deliver-plataforma" required>
+                                    <option value="">Selecione...</option>
+                                    <option value="ifood">iFood</option>
+                                    <option value="uber">Uber Eats</option>
+                                    <option value="rappi">Rappi</option>
+                                    <option value="99">99 Food</option>
+                                    <option value="whatsapp">WhatsApp</option>
+                                    <option value="telefone">Telefone</option>
+                                    <option value="outro">Outro</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Destinatário (Morador) *</label>
+                            <select id="deliver-morador" required>
+                                <option value="">Selecione...</option>
+                            </select>
+                        </div>
+                        <button type="submit" class="btn">☁️ Salvar na Nuvem</button>
+                    </form>
+                </div>
+                
+                <div id="tab-deliveres-em-entrega" class="tab-content">
+                    <div class="table-container">
+                        <table id="tabela-deliveres">
+                            <thead>
+                                <tr>
+                                    <th>Plataforma</th>
+                                    <th>Nome</th>
+                                    <th>Destinatário</th>
+                                    <th>Tempo</th>
+                                    <th>Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody id="lista-deliveres-body"></tbody>
+                        </table>
+                    </div>
+                </div>
+                
+                <div id="tab-deliveres-historico" class="tab-content">
+                    <div class="table-container">
+                        <table id="tabela-historico-deliveres">
+                            <thead>
+                                <tr>
+                                    <th>Entrada</th>
+                                    <th>Saída</th>
+                                    <th>Nome</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="lista-historico-deliveres-body"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Encomendas -->
+        <div id="form-encomendas" class="form-section">
+            <div class="form-container">
+                <button class="back-btn" onclick="mostrarForm('dashboard')">← Voltar</button>
+                <h2 style="margin-bottom: 20px; color: #333; font-size: 18px;">📦 Encomendas</h2>
+                
+                <div class="stats-grid">
+                    <div class="stat-card orange"><h3>Pendentes</h3><div class="value" id="encomendas-pendentes">0</div></div>
+                    <div class="stat-card green"><h3>Entregues Hoje</h3><div class="value" id="encomendas-entregues-hoje">0</div></div>
+                    <div class="stat-card purple"><h3>Total Mês</h3><div class="value" id="encomendas-mes">0</div></div>
+                </div>
+                
+                <div class="tabs">
+                    <button class="tab active" onclick="switchTabEncomendas('receber')">Receber</button>
+                    <button class="tab" onclick="switchTabEncomendas('pendentes')">Pendentes</button>
+                    <button class="tab" onclick="switchTabEncomendas('historico')">Histórico</button>
+                </div>
+                
+                <div id="tab-encomendas-receber" class="tab-content active">
+                    <div class="user-registrando-info">
+                        <span style="font-size: 11px;">👤 Recebendo como:</span>
+                        <span style="font-size: 12px;" id="encomenda-user-logado">-</span>
+                    </div>
+                    <form id="encomendaForm">
+                        <div class="grid-2">
+                            <div class="form-group">
+                                <label>Tipo *</label>
+                                <select id="encomenda-tipo" required>
+                                    <option value="">Selecione...</option>
+                                    <option value="carta">Carta</option>
+                                    <option value="pacote_pequeno">Pacote P</option>
+                                    <option value="pacote_medio">Pacote M</option>
+                                    <option value="pacote_grande">Pacote G</option>
+                                    <option value="envelope">Envelope</option>
+                                    <option value="outro">Outro</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Data *</label>
+                                <input type="date" id="encomenda-data" required>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Destinatário *</label>
+                            <select id="encomenda-morador" required>
+                                <option value="">Selecione...</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Recebido por *</label>
+                            <input type="text" id="encomenda-recebedor" required placeholder="Seu nome">
+                        </div>
+                        <button type="submit" class="btn">☁️ Salvar na Nuvem</button>
+                    </form>
+                </div>
+                
+                <div id="tab-encomendas-pendentes" class="tab-content">
+                    <div class="table-container">
+                        <table id="tabela-encomendas-pendentes">
+                            <thead>
+                                <tr>
+                                    <th>Data</th>
+                                    <th>Tipo</th>
+                                    <th>Destinatário</th>
+                                    <th>Dias</th>
+                                    <th>Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody id="lista-encomendas-pendentes-body"></tbody>
+                        </table>
+                    </div>
+                </div>
+                
+                <div id="tab-encomendas-historico" class="tab-content">
+                    <div class="table-container">
+                        <table id="tabela-historico-encomendas">
+                            <thead>
+                                <tr>
+                                    <th>Data Rec.</th>
+                                    <th>Tipo</th>
+                                    <th>Destinatário</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="lista-historico-encomendas-body"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Financeiro -->
+        <div id="form-financeiro" class="form-section">
+            <div class="form-container">
+                <button class="back-btn" onclick="mostrarForm('dashboard')">← Voltar</button>
+                <h2 style="margin-bottom: 20px; color: #333; font-size: 18px;">💰 Financeiro</h2>
+                
+                <div class="stats-grid">
+                    <div class="stat-card green"><h3>Recebido</h3><div class="value" id="total-recebido">R$ 0</div></div>
+                    <div class="stat-card red"><h3>Pendente</h3><div class="value" id="total-pendente">R$ 0</div></div>
+                    <div class="stat-card blue"><h3>Moradores</h3><div class="value" id="total-moradores">0</div></div>
+                </div>
+                
+                <div class="tabs">
+                    <button class="tab active" onclick="switchTab('lancamentos')">Lançamentos</button>
+                    <button class="tab" onclick="switchTab('novo-lancamento')">Novo</button>
+                </div>
+                
+                <div id="tab-lancamentos" class="tab-content active">
+                    <div class="table-container">
+                        <table id="tabela-lancamentos">
+                            <thead>
+                                <tr>
+                                    <th>Data</th>
+                                    <th>Descrição</th>
+                                    <th>Valor</th>
+                                    <th>Status</th>
+                                    <th>Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody id="lista-lancamentos-body"></tbody>
+                        </table>
+                    </div>
+                </div>
+                
+                <div id="tab-novo-lancamento" class="tab-content">
+                    <div class="user-registrando-info">
+                        <span style="font-size: 11px;">👤 Registrando como:</span>
+                        <span style="font-size: 12px;" id="financeiro-user-logado">-</span>
+                    </div>
+                    <form id="lancamentoForm">
+                        <div class="form-group">
+                            <label>Tipo</label>
+                            <select id="lanc-tipo" required>
+                                <option value="receita">Receita</option>
+                                <option value="despesa">Despesa</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Descrição</label>
+                            <input type="text" id="lanc-descricao" required placeholder="Descrição">
+                        </div>
+                        <div class="form-group">
+                            <label>Valor (R$)</label>
+                            <input type="number" id="lanc-valor" step="0.01" required placeholder="0,00">
+                        </div>
+                        <button type="submit" class="btn">☁️ Salvar na Nuvem</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Configurações -->
+        <div id="form-configuracoes" class="form-section">
+            <div class="form-container">
+                <button class="back-btn" onclick="mostrarForm('dashboard')">← Voltar</button>
+                <h2 style="margin-bottom: 20px; color: #333; font-size: 18px;">⚙️ Configurações</h2>
+                
+                <div class="config-section">
+                    <h3>📊 Estatísticas da Nuvem</h3>
+                    <p style="font-size: 13px; color: #666;">
+                        Moradores: <strong id="stats-moradores">0</strong> | 
+                        Visitantes hoje: <strong id="stats-visitantes-hoje">0</strong> | 
+                        Deliveres hoje: <strong id="stats-deliveres-hoje">0</strong> | 
+                        Encomendas: <strong id="stats-encomendas-pendentes">0</strong> |
+                        Lixeira: <strong id="stats-lixeira">0</strong>
+                    </p>
+                </div>
+                
+                <div class="config-section">
+                    <h3>💾 Backup/Restore</h3>
+                    <div class="quick-actions">
+                        <button class="btn btn-secondary btn-small" onclick="exportarJSON()">📥 Exportar JSON</button>
+                        <button class="btn btn-secondary btn-small" onclick="document.getElementById('input-restore').click()">📤 Importar</button>
+                        <input type="file" id="input-restore" style="display: none;" accept=".json" onchange="importarJSON(this)">
+                    </div>
+                </div>
+                
+                <div class="config-section" style="background: #ffebee;">
+                    <h3>⚠️ Zona de Perigo</h3>
+                    <button class="btn btn-danger btn-small" onclick="limparTodosDados()">🗑️ Limpar TUDO</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Lixeira -->
+        <div id="form-lixeira" class="form-section">
+            <div class="form-container">
+                <button class="back-btn" onclick="mostrarForm('dashboard')">← Voltar</button>
+                <h2 style="margin-bottom: 20px; color: #333; font-size: 18px;">🗑️ Lixeira</h2>
+                
+                <div class="lixeira-info">
+                    <strong>⚠️ Somente Leitura</strong><br>
+                    Itens excluídos ficam aqui para auditoria.
+                </div>
+
+                <div class="stats-grid">
+                    <div class="stat-card gray"><h3>Total</h3><div class="value" id="lixeira-total">0</div></div>
+                    <div class="stat-card red"><h3>Moradores</h3><div class="value" id="lixeira-moradores">0</div></div>
+                    <div class="stat-card orange"><h3>Lançamentos</h3><div class="value" id="lixeira-lancamentos">0</div></div>
+                    <div class="stat-card purple"><h3>Encomendas</h3><div class="value" id="lixeira-encomendas">0</div></div>
+                </div>
+                
+                <div class="tabs lixeira-tabs">
+                    <button class="tab active" onclick="switchTabLixeira('todos')">Todos</button>
+                    <button class="tab" onclick="switchTabLixeira('moradores')">Moradores</button>
+                    <button class="tab" onclick="switchTabLixeira('lancamentos')">Lançamentos</button>
+                    <button class="tab" onclick="switchTabLixeira('encomendas')">Encomendas</button>
+                </div>
+                
+                <div id="tab-lixeira-todos" class="tab-content active">
+                    <div class="table-container">
+                        <table id="tabela-lixeira" class="readonly-table">
+                            <thead>
+                                <tr>
+                                    <th>Tipo</th>
+                                    <th>Descrição</th>
+                                    <th>Data Exclusão</th>
+                                    <th>Excluído por</th>
+                                </tr>
+                            </thead>
+                            <tbody id="lista-lixeira-body"></tbody>
+                        </table>
+                    </div>
+                </div>
+                
+                <div id="tab-lixeira-moradores" class="tab-content">
+                    <div class="table-container">
+                        <table id="tabela-lixeira-moradores" class="readonly-table">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Nome</th>
+                                    <th>Endereço</th>
+                                    <th>Data Exclusão</th>
+                                    <th>Excluído por</th>
+                                </tr>
+                            </thead>
+                            <tbody id="lista-lixeira-moradores-body"></tbody>
+                        </table>
+                    </div>
+                </div>
+                
+                <div id="tab-lixeira-lancamentos" class="tab-content">
+                    <div class="table-container">
+                        <table id="tabela-lixeira-lancamentos" class="readonly-table">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Descrição</th>
+                                    <th>Valor</th>
+                                    <th>Data Exclusão</th>
+                                    <th>Excluído por</th>
+                                </tr>
+                            </thead>
+                            <tbody id="lista-lixeira-lancamentos-body"></tbody>
+                        </table>
+                    </div>
+                </div>
+                
+                <div id="tab-lixeira-encomendas" class="tab-content">
+                    <div class="table-container">
+                        <table id="tabela-lixeira-encomendas" class="readonly-table">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Tipo</th>
+                                    <th>Destinatário</th>
+                                    <th>Data Exclusão</th>
+                                    <th>Excluído por</th>
+                                </tr>
+                            </thead>
+                            <tbody id="lista-lixeira-encomendas-body"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="quick-actions" style="margin-top: 15px;">
+                    <button class="btn btn-dark btn-small" onclick="exportarLixeiraCSV()">📊 Exportar CSV</button>
+                    <button class="btn btn-danger btn-small" onclick="limparLixeira()">🗑️ Esvaziar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modais -->
+    <div id="modal-editar" class="modal">
+        <div class="modal-content">
+            <h3 style="margin-bottom: 15px;">Editar Morador</h3>
+            <form id="form-editar-morador">
+                <input type="hidden" id="edit-id">
+                <div class="form-group">
+                    <label>Nome</label>
+                    <input type="text" id="edit-nome" required>
+                </div>
+                <div class="form-group">
+                    <label>Telefone</label>
+                    <input type="tel" id="edit-telefone" required>
+                </div>
+                <div class="grid-2">
+                    <div class="form-group">
+                        <label>Rua</label>
+                        <input type="text" id="edit-rua" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Número</label>
+                        <input type="text" id="edit-numero" required>
+                    </div>
+                </div>
+                <div class="modal-footer" style="display: flex; gap: 10px; margin-top: 20px;">
+                    <button type="button" class="btn btn-secondary" onclick="fecharModal()" style="flex: 1;">Cancelar</button>
+                    <button type="submit" class="btn" style="flex: 1;">Salvar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="modal-confirmar" class="modal">
+        <div class="modal-content">
+            <h3 style="margin-bottom: 15px;">Confirmar</h3>
+            <p id="msg-confirmar" style="margin-bottom: 20px;">Tem certeza?</p>
+            <div class="modal-footer" style="display: flex; gap: 10px;">
+                <button class="btn btn-secondary" onclick="fecharModalConfirmar()" style="flex: 1;">Não</button>
+                <button class="btn btn-danger" id="btn-confirmar-acao" style="flex: 1;">Sim</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="modal-entrega" class="modal">
+        <div class="modal-content">
+            <h3 style="margin-bottom: 15px;">Registrar Entrega</h3>
+            <form id="form-entrega-encomenda">
+                <input type="hidden" id="entrega-id">
+                <div class="form-group">
+                    <label>Quem retirou? *</label>
+                    <input type="text" id="entrega-quem-retirou" required>
+                </div>
+                <div class="modal-footer" style="display: flex; gap: 10px; margin-top: 20px;">
+                    <button type="button" class="btn btn-secondary" onclick="fecharModalEntrega()" style="flex: 1;">Cancelar</button>
+                    <button type="submit" class="btn btn-success" style="flex: 1;">Confirmar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // ==================== CONFIGURAÇÃO FIREBASE ====================
+        let firebaseConfig = null;
+        let db = null;
+        let auth = null;
+        let condominioId = null;
+        let usuarioLogado = null;
+        let isOnline = true;
+
+        // Carregar configuração salva
+        function carregarConfigFirebase() {
+            const config = localStorage.getItem('condominio_firebase_config');
+            if (config) {
+                firebaseConfig = JSON.parse(config);
+                inicializarFirebase();
+                return true;
+            }
+            return false;
+        }
+
+        function salvarConfigFirebase() {
+            const apiKey = document.getElementById('firebase-apiKey').value.trim();
+            const databaseURL = document.getElementById('firebase-databaseURL').value.trim();
+            const projectId = document.getElementById('firebase-projectId').value.trim();
+
+            if (!apiKey || !databaseURL || !projectId) {
+                showError('Preencha todos os campos!');
+                return;
+            }
+
+            firebaseConfig = {
+                apiKey: apiKey,
+                authDomain: `${projectId}.firebaseapp.com`,
+                databaseURL: databaseURL,
+                projectId: projectId,
+                storageBucket: `${projectId}.appspot.com`,
+                messagingSenderId: "000000000000",
+                appId: "1:000000000000:web:0000000000000000"
+            };
+
+            localStorage.setItem('condominio_firebase_config', JSON.stringify(firebaseConfig));
+            showSuccess('Configuração salva! Inicializando...');
+            
+            setTimeout(() => {
+                location.reload();
+            }, 1500);
+        }
+
+        function inicializarFirebase() {
+            try {
+                firebase.initializeApp(firebaseConfig);
+                db = firebase.database();
+                auth = firebase.auth();
+                
+                // Monitorar conexão
+                const connectedRef = db.ref('.info/connected');
+                connectedRef.on('value', (snap) => {
+                    isOnline = snap.val() === true;
+                    atualizarStatusConexao();
+                });
+
+                // Verificar autenticação
+                auth.onAuthStateChanged((user) => {
+                    if (user) {
+                        usuarioLogado = user.displayName || user.email;
+                        condominioId = user.uid;
+                        mostrarForm('dashboard');
+                    } else {
+                        mostrarForm('login');
+                    }
+                });
+
+            } catch (e) {
+                console.error('Erro Firebase:', e);
+                showError('Erro ao conectar. Verifique a configuração.');
+            }
+        }
+
+        function atualizarStatusConexao() {
+            const statusEl = document.getElementById('sync-status');
+            const iconEl = document.getElementById('sync-icon');
+            const textEl = document.getElementById('sync-text');
+
+            if (isOnline) {
+                statusEl.className = 'sync-status online';
+                iconEl.textContent = '🟢';
+                textEl.textContent = 'Online';
+            } else {
+                statusEl.className = 'sync-status offline';
+                iconEl.textContent = '🔴';
+                textEl.textContent = 'Offline';
+            }
+        }
+
+        function verificarConexao() {
+            if (db) {
+                db.ref('.info/connected').once('value').then((snap) => {
+                    isOnline = snap.val() === true;
+                    atualizarStatusConexao();
+                    showSuccess(isOnline ? 'Conectado à nuvem!' : 'Sem conexão. Verifique sua internet.');
+                });
+            }
+        }
+
+        // ==================== NAVEGAÇÃO ====================
+        function mostrarForm(formName) {
+            document.querySelectorAll('.form-section, .dashboard').forEach(el => el.classList.remove('active'));
+            
+            if (formName === 'dashboard') {
+                document.getElementById('dashboard').classList.add('active');
+                document.getElementById('user-name').textContent = usuarioLogado || 'Usuário';
+                document.getElementById('header-user-info').style.display = 'flex';
+                document.getElementById('header-user-name').textContent = usuarioLogado || '-';
+            } else {
+                document.getElementById(`form-${formName}`).classList.add('active');
+                document.getElementById('header-user-info').style.display = 'none';
+            }
+            
+            hideMessages();
+            
+            // Carregar dados específicos
+            if (formName === 'lista-moradores') carregarMoradores();
+            if (formName === 'visitantes') {
+                carregarMoradoresSelect('visitante-morador');
+                carregarVisitantes();
+                iniciarRelogio('current-datetime-visitante');
+                document.getElementById('visitante-user-logado').textContent = usuarioLogado;
+            }
+            if (formName === 'deliveres') {
+                carregarMoradoresSelect('deliver-morador');
+                carregarDeliveres();
+                iniciarRelogio('current-datetime-deliver');
+                document.getElementById('deliver-user-logado').textContent = usuarioLogado;
+            }
+            if (formName === 'encomendas') {
+                carregarMoradoresSelect('encomenda-morador');
+                carregarEncomendas();
+                document.getElementById('encomenda-data').valueAsDate = new Date();
+                document.getElementById('encomenda-user-logado').textContent = usuarioLogado;
+                document.getElementById('encomenda-recebedor').value = usuarioLogado || '';
+            }
+            if (formName === 'financeiro') {
+                carregarLancamentos();
+                document.getElementById('financeiro-user-logado').textContent = usuarioLogado;
+            }
+            if (formName === 'configuracoes') carregarEstatisticas();
+            if (formName === 'lixeira') carregarLixeira();
+            if (formName === 'cadastro-morador') {
+                document.getElementById('morador-user-logado').textContent = usuarioLogado;
+                document.getElementById('morador-id').value = 'M' + Date.now().toString().slice(-6);
+            }
+        }
+
+        // ==================== AUTENTICAÇÃO ====================
+        document.getElementById('loginForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const email = document.getElementById('login-email').value.trim();
+            const senha = document.getElementById('login-senha').value;
+            
+            mostrarLoading(true);
+            
+            auth.signInWithEmailAndPassword(email, senha)
+                .then((userCredential) => {
+                    usuarioLogado = userCredential.user.displayName || email;
+                    mostrarLoading(false);
+                    showSuccess('Bem-vindo!');
+                })
+                .catch((error) => {
+                    mostrarLoading(false);
+                    showError('Erro: ' + error.message);
+                });
+        });
+
+        document.getElementById('cadastroForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const nome = document.getElementById('novo-usuario').value.trim();
+            const email = document.getElementById('novo-email').value.trim();
+            const senha = document.getElementById('nova-senha').value;
+            const confirmar = document.getElementById('confirmar-senha').value;
+            
+            if (senha !== confirmar) { showError('Senhas não conferem!'); return; }
+            if (senha.length < 6) { showError('Mínimo 6 caracteres!'); return; }
+            
+            mostrarLoading(true);
+            
+            auth.createUserWithEmailAndPassword(email, senha)
+                .then((userCredential) => {
+                    return userCredential.user.updateProfile({
+                        displayName: nome
+                    }).then(() => {
+                        // Criar estrutura inicial no banco
+                        const uid = userCredential.user.uid;
+                        return db.ref(`condominios/${uid}`).set({
+                            criadoEm: firebase.database.ServerValue.TIMESTAMP,
+                            criadoPor: nome,
+                            nome: nome
+                        });
+                    });
+                })
+                .then(() => {
+                    mostrarLoading(false);
+                    showSuccess('Conta criada! Entrando...');
+                })
+                .catch((error) => {
+                    mostrarLoading(false);
+                    showError('Erro: ' + error.message);
+                });
+        });
+
+        function logout() {
+            auth.signOut().then(() => {
+                usuarioLogado = null;
+                condominioId = null;
+                mostrarForm('login');
+            });
+        }
+
+        // ==================== MORADORES (CLOUD) ====================
+        function getMoradoresRef() {
+            return db.ref(`condominios/${condominioId}/moradores`);
+        }
+
+        function salvarMorador(morador) {
+            mostrarLoading(true);
+            const ref = getMoradoresRef().push();
+            morador.id = ref.key;
+            morador.cadastradoPor = usuarioLogado;
+            morador.dataCadastro = new Date().toISOString();
+            
+            return ref.set(morador)
+                .then(() => {
+                    mostrarLoading(false);
+                    showSuccess('Morador salvo na nuvem!');
+                    return true;
+                })
+                .catch((error) => {
+                    mostrarLoading(false);
+                    showError('Erro: ' + error.message);
+                    return false;
+                });
+        }
+
+        function carregarMoradores() {
+            mostrarLoading(true);
+            getMoradoresRef().once('value')
+                .then((snapshot) => {
+                    mostrarLoading(false);
+                    const data = snapshot.val() || {};
+                    const lista = Object.values(data);
+                    renderizarMoradores(lista);
+                })
+                .catch((error) => {
+                    mostrarLoading(false);
+                    showError('Erro ao carregar: ' + error.message);
+                });
+        }
+
+        function renderizarMoradores(lista) {
+            const tbody = document.getElementById('lista-moradores-body');
+            const empty = document.getElementById('empty-moradores');
+            
+            if (lista.length === 0) {
+                tbody.innerHTML = '';
+                empty.style.display = 'block';
+                return;
+            }
+            
+            empty.style.display = 'none';
+            tbody.innerHTML = '';
+            
+            lista.forEach(m => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${m.id?.substring(0, 8) || '-'}</td>
+                    <td>${m.nome}</td>
+                    <td>${m.telefone}</td>
+                    <td>${m.rua}, ${m.numero}</td>
+                    <td><span class="badge badge-${m.situacao}">${m.situacao}</span></td>
+                    <td class="action-btns">
+                        <button class="btn-icon btn-edit" onclick="editarMorador('${m.id}')">✏️</button>
+                        <button class="btn-icon btn-delete" onclick="excluirMorador('${m.id}')">🗑️</button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function filtrarMoradores() {
+            const busca = document.getElementById('search-morador').value.toLowerCase();
+            const situacao = document.getElementById('filter-situacao').value;
+            
+            getMoradoresRef().once('value').then((snapshot) => {
+                const data = snapshot.val() || {};
+                let lista = Object.values(data);
+                
+                if (busca) {
+                    lista = lista.filter(m => 
+                        m.nome.toLowerCase().includes(busca) || 
+                        m.rua.toLowerCase().includes(busca)
+                    );
+                }
+                if (situacao) {
+                    lista = lista.filter(m => m.situacao === situacao);
+                }
+                
+                renderizarMoradores(lista);
+            });
+        }
+
+        document.getElementById('moradorForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const morador = {
+                nome: document.getElementById('morador-nome').value.trim(),
+                telefone: document.getElementById('morador-telefone').value.trim(),
+                rua: document.getElementById('morador-rua').value.trim(),
+                numero: document.getElementById('morador-numero').value.trim(),
+                situacao: document.getElementById('morador-situacao').value,
+                dataEntrada: document.getElementById('data-entrada').value || null,
+                numeroContrato: document.getElementById('numero-contrato').value || null
+            };
+            
+                       salvarMorador(morador).then((sucesso) => {
+                if (sucesso) {
+                    this.reset();
+                    document.getElementById('morador-id').value = 'M' + Date.now().toString().slice(-6);
+                    document.getElementById('locatario-fields').classList.remove('show');
+                }
+            });
+        });
+
+        function editarMorador(id) {
+            getMoradoresRef().child(id).once('value').then((snapshot) => {
+                const m = snapshot.val();
+                if (!m) return;
+                
+                document.getElementById('edit-id').value = id;
+                document.getElementById('edit-nome').value = m.nome;
+                document.getElementById('edit-telefone').value = m.telefone;
+                document.getElementById('edit-rua').value = m.rua;
+                document.getElementById('edit-numero').value = m.numero;
+                
+                document.getElementById('modal-editar').classList.add('active');
+            });
+        }
+
+        document.getElementById('form-editar-morador').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const id = document.getElementById('edit-id').value;
+            
+            const atualizacoes = {
+                nome: document.getElementById('edit-nome').value.trim(),
+                telefone: document.getElementById('edit-telefone').value.trim(),
+                rua: document.getElementById('edit-rua').value.trim(),
+                numero: document.getElementById('edit-numero').value.trim(),
+                editadoPor: usuarioLogado,
+                dataEdicao: new Date().toISOString()
+            };
+            
+            mostrarLoading(true);
+            getMoradoresRef().child(id).update(atualizacoes)
+                .then(() => {
+                    mostrarLoading(false);
+                    showSuccess('Atualizado na nuvem!');
+                    fecharModal();
+                    carregarMoradores();
+                })
+                .catch((error) => {
+                    mostrarLoading(false);
+                    showError('Erro: ' + error.message);
+                });
+        });
+
+        function excluirMorador(id) {
+            if (!confirm('Mover este morador para a lixeira?')) return;
+            
+            getMoradoresRef().child(id).once('value').then((snapshot) => {
+                const morador = snapshot.val();
+                if (!morador) return;
+                
+                // Adicionar à lixeira
+                const itemLixeira = {
+                    tipo: 'morador',
+                    id: id,
+                    dados: morador,
+                    dataExclusao: new Date().toISOString(),
+                    excluidoPor: usuarioLogado,
+                    motivo: 'Exclusão manual'
+                };
+                
+                mostrarLoading(true);
+                
+                // Salvar na lixeira e remover dos ativos
+                const updates = {};
+                updates[`condominios/${condominioId}/lixeira/${Date.now()}`] = itemLixeira;
+                updates[`condominios/${condominioId}/moradores/${id}`] = null;
+                
+                db.ref().update(updates)
+                    .then(() => {
+                        mostrarLoading(false);
+                        showSuccess('Movido para lixeira!');
+                        carregarMoradores();
+                    })
+                    .catch((error) => {
+                        mostrarLoading(false);
+                        showError('Erro: ' + error.message);
+                    });
+            });
+        }
+
+        // ==================== VISITANTES (CLOUD) ====================
+        function getVisitantesRef() {
+            return db.ref(`condominios/${condominioId}/visitantes`);
+        }
+
+        function carregarVisitantes() {
+            const hoje = new Date().toISOString().split('T')[0];
+            
+            getVisitantesRef().once('value').then((snapshot) => {
+                const data = snapshot.val() || {};
+                const lista = Object.values(data);
+                
+                // Atualizar resumo
+                const entradasHoje = lista.filter(v => v.dataEntrada?.startsWith(hoje) && v.tipo === 'entrada').length;
+                const saidasHoje = lista.filter(v => v.dataSaida?.startsWith(hoje)).length;
+                const dentro = lista.filter(v => v.status === 'dentro').length;
+                
+                document.getElementById('visitas-entradas-hoje').textContent = entradasHoje;
+                document.getElementById('visitas-saidas-hoje').textContent = saidasHoje;
+                document.getElementById('visitas-dentro').textContent = dentro;
+                
+                // Renderizar lista de dentro
+                const tbody = document.getElementById('lista-visitantes-body');
+                const dentroLista = lista.filter(v => v.status === 'dentro').sort((a, b) => b.dataEntrada.localeCompare(a.dataEntrada));
+                
+                tbody.innerHTML = '';
+                dentroLista.forEach(v => {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td>${v.nome}</td>
+                        <td>${v.moradorNome}</td>
+                        <td>${new Date(v.dataEntrada).toLocaleTimeString('pt-BR')}</td>
+                        <td>
+                            <button class="btn-icon btn-edit" onclick="registrarSaidaVisitante('${v.id}')">🚪</button>
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            });
+        }
+
+        document.getElementById('visitanteForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const moradorId = document.getElementById('visitante-morador').value;
+            const moradorNome = document.getElementById('visitante-morador').options[document.getElementById('visitante-morador').selectedIndex].text;
+            
+            const visitante = {
+                nome: document.getElementById('visitante-nome').value.trim(),
+                documento: document.getElementById('visitante-documento').value.trim(),
+                moradorId: moradorId,
+                moradorNome: moradorNome.split(' - ')[0],
+                motivo: document.getElementById('visitante-motivo').value,
+                dataEntrada: new Date().toISOString(),
+                status: 'dentro',
+                tipo: 'entrada',
+                registradoPor: usuarioLogado
+            };
+            
+            mostrarLoading(true);
+            const ref = getVisitantesRef().push();
+            visitante.id = ref.key;
+            
+            ref.set(visitante)
+                .then(() => {
+                    mostrarLoading(false);
+                    showSuccess('Visitante registrado na nuvem!');
+                    this.reset();
+                    carregarVisitantes();
+                })
+                .catch((error) => {
+                    mostrarLoading(false);
+                    showError('Erro: ' + error.message);
+                });
+        });
+
+        function registrarSaidaVisitante(id) {
+            mostrarLoading(true);
+            getVisitantesRef().child(id).update({
+                status: 'saida',
+                dataSaida: new Date().toISOString(),
+                tipo: 'saida',
+                saidaRegistradaPor: usuarioLogado
+            })
+            .then(() => {
+                mostrarLoading(false);
+                showSuccess('Saída registrada!');
+                carregarVisitantes();
+            })
+            .catch((error) => {
+                mostrarLoading(false);
+                showError('Erro: ' + error.message);
+            });
+        }
+
+        function carregarHistoricoVisitantes() {
+            const dataFiltro = document.getElementById('filtro-data-visita').value;
+            
+            getVisitantesRef().once('value').then((snapshot) => {
+                const data = snapshot.val() || {};
+                let lista = Object.values(data).sort((a, b) => b.dataEntrada.localeCompare(a.dataEntrada));
+                
+                if (dataFiltro) {
+                    lista = lista.filter(v => v.dataEntrada.startsWith(dataFiltro));
+                }
+                
+                const tbody = document.getElementById('lista-historico-visitantes-body');
+                tbody.innerHTML = '';
+                
+                lista.forEach(v => {
+                    const tr = document.createElement('tr');
+                    const tempo = v.dataSaida ? 
+                        Math.round((new Date(v.dataSaida) - new Date(v.dataEntrada)) / 60000) + ' min' : 
+                        (v.status === 'dentro' ? 'Dentro' : '-');
+                    
+                    tr.innerHTML = `
+                        <td>${new Date(v.dataEntrada).toLocaleString('pt-BR')}</td>
+                        <td>${v.nome}</td>
+                        <td><span class="badge ${v.tipo === 'entrada' ? 'badge-entrada' : 'badge-saida'}">${v.tipo}</span></td>
+                        <td>${tempo}</td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            });
+        }
+
+        // ==================== DELIVERES (CLOUD) ====================
+        function getDeliveresRef() {
+            return db.ref(`condominios/${condominioId}/deliveres`);
+        }
+
+        function carregarDeliveres() {
+            const hoje = new Date().toISOString().split('T')[0];
+            
+            getDeliveresRef().once('value').then((snapshot) => {
+                const data = snapshot.val() || {};
+                const lista = Object.values(data);
+                
+                // Resumo
+                const entradasHoje = lista.filter(d => d.dataEntrada?.startsWith(hoje)).length;
+                const dentro = lista.filter(d => d.status === 'entregando').length;
+                const concluidasHoje = lista.filter(d => d.status === 'concluido' && d.dataSaida?.startsWith(hoje)).length;
+                
+                document.getElementById('deliveres-entradas-hoje').textContent = entradasHoje;
+                document.getElementById('deliveres-dentro').textContent = dentro;
+                document.getElementById('deliveres-concluidas-hoje').textContent = concluidasHoje;
+                
+                // Lista de entregando
+                const tbody = document.getElementById('lista-deliveres-body');
+                const entregando = lista.filter(d => d.status === 'entregando').sort((a, b) => a.dataEntrada.localeCompare(b.dataEntrada));
+                
+                tbody.innerHTML = '';
+                const agora = new Date();
+                
+                entregando.forEach(d => {
+                    const tempoMin = Math.round((agora - new Date(d.dataEntrada)) / 60000);
+                    const tempoStr = tempoMin < 60 ? `${tempoMin}min` : `${Math.floor(tempoMin/60)}h${tempoMin%60}min`;
+                    const alerta = tempoMin > 15 ? 'style="color:#e74c3c;font-weight:bold;"' : '';
+                    
+                    const badges = { ifood: 'badge-ifood', uber: 'badge-uber', rappi: 'badge-rappi', '99': 'badge-99' };
+                    
+                    tr.innerHTML = `
+                        <td><span class="badge ${badges[d.plataforma] || 'badge-outros'}">${d.plataforma}</span></td>
+                        <td>${d.nome}</td>
+                        <td>${d.moradorNome}</td>
+                        <td ${alerta}>${tempoStr}</td>
+                        <td>
+                            <button class="btn-icon btn-success" onclick="concluirEntrega('${d.id}')">✓</button>
+                            <button class="btn-icon btn-delete" onclick="cancelarEntrega('${d.id}')">✕</button>
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            });
+        }
+
+        document.getElementById('deliverForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const moradorId = document.getElementById('deliver-morador').value;
+            const moradorNome = document.getElementById('deliver-morador').options[document.getElementById('deliver-morador').selectedIndex].text;
+            
+            const deliver = {
+                nome: document.getElementById('deliver-nome').value.trim(),
+                plataforma: document.getElementById('deliver-plataforma').value,
+                moradorId: moradorId,
+                moradorNome: moradorNome.split(' - ')[0],
+                dataEntrada: new Date().toISOString(),
+                status: 'entregando',
+                registradoPor: usuarioLogado
+            };
+            
+            mostrarLoading(true);
+            const ref = getDeliveresRef().push();
+            deliver.id = ref.key;
+            
+            ref.set(deliver)
+                .then(() => {
+                    mostrarLoading(false);
+                    showSuccess('Deliver salvo na nuvem!');
+                    this.reset();
+                    carregarDeliveres();
+                })
+                .catch((error) => {
+                    mostrarLoading(false);
+                    showError('Erro: ' + error.message);
+                });
+        });
+
+        function concluirEntrega(id) {
+            mostrarLoading(true);
+            getDeliveresRef().child(id).update({
+                status: 'concluido',
+                dataSaida: new Date().toISOString(),
+                concluidoPor: usuarioLogado
+            })
+            .then(() => {
+                mostrarLoading(false);
+                showSuccess('Entrega concluída!');
+                carregarDeliveres();
+            })
+            .catch((error) => {
+                mostrarLoading(false);
+                showError('Erro: ' + error.message);
+            });
+        }
+
+        function cancelarEntrega(id) {
+            if (!confirm('Cancelar entrega?')) return;
+            
+            mostrarLoading(true);
+            getDeliveresRef().child(id).update({
+                status: 'cancelado',
+                dataSaida: new Date().toISOString(),
+                canceladoPor: usuarioLogado
+            })
+            .then(() => {
+                mostrarLoading(false);
+                showSuccess('Entrega cancelada!');
+                carregarDeliveres();
+            })
+            .catch((error) => {
+                mostrarLoading(false);
+                showError('Erro: ' + error.message);
+            });
+        }
+
+        // ==================== ENCOMENDAS (CLOUD) ====================
+        function getEncomendasRef() {
+            return db.ref(`condominios/${condominioId}/encomendas`);
+        }
+
+        function carregarEncomendas() {
+            const hoje = new Date().toISOString().split('T')[0];
+            const mesAtual = hoje.substring(0, 7);
+            
+            getEncomendasRef().once('value').then((snapshot) => {
+                const data = snapshot.val() || {};
+                const lista = Object.values(data);
+                
+                // Resumo
+                const pendentes = lista.filter(e => e.status === 'pendente').length;
+                const entreguesHoje = lista.filter(e => e.status === 'entregue' && e.dataEntrega?.startsWith(hoje)).length;
+                const totalMes = lista.filter(e => e.dataRecebimento?.startsWith(mesAtual)).length;
+                
+                document.getElementById('encomendas-pendentes').textContent = pendentes;
+                document.getElementById('encomendas-entregues-hoje').textContent = entreguesHoje;
+                document.getElementById('encomendas-mes').textContent = totalMes;
+                
+                // Pendentes
+                const tbody = document.getElementById('lista-encomendas-pendentes-body');
+                const pendentesLista = lista.filter(e => e.status === 'pendente').sort((a, b) => a.dataRecebimento.localeCompare(b.dataRecebimento));
+                
+                tbody.innerHTML = '';
+                const hojeDate = new Date();
+                
+                pendentesLista.forEach(e => {
+                    const dias = Math.floor((hojeDate - new Date(e.dataRecebimento)) / (1000 * 60 * 60 * 24));
+                    const diasStyle = dias > 7 ? 'style="color:#e74c3c;font-weight:bold;"' : '';
+                    
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td>${new Date(e.dataRecebimento).toLocaleDateString('pt-BR')}</td>
+                        <td>${e.tipo}</td>
+                        <td>${e.moradorNome}</td>
+                        <td ${diasStyle}>${dias}d</td>
+                        <td>
+                            <button class="btn-icon btn-edit" onclick="abrirModalEntrega('${e.id}')">✓</button>
+                            <button class="btn-icon btn-delete" onclick="excluirEncomenda('${e.id}')">🗑️</button>
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            });
+        }
+
+        document.getElementById('encomendaForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const moradorId = document.getElementById('encomenda-morador').value;
+            const moradorNome = document.getElementById('encomenda-morador').options[document.getElementById('encomenda-morador').selectedIndex].text;
+            
+            const encomenda = {
+                tipo: document.getElementById('encomenda-tipo').value,
+                dataRecebimento: document.getElementById('encomenda-data').value,
+                moradorId: moradorId,
+                moradorNome: moradorNome.split(' - ')[0],
+                recebedor: document.getElementById('encomenda-recebedor').value.trim(),
+                status: 'pendente',
+                recebidoPor: usuarioLogado
+            };
+            
+            mostrarLoading(true);
+            const ref = getEncomendasRef().push();
+            encomenda.id = ref.key;
+            
+            ref.set(encomenda)
+                .then(() => {
+                    mostrarLoading(false);
+                    showSuccess('Encomenda salva na nuvem!');
+                    this.reset();
+                    document.getElementById('encomenda-data').valueAsDate = new Date();
+                    document.getElementById('encomenda-recebedor').value = usuarioLogado || '';
+                    carregarEncomendas();
+                })
+                .catch((error) => {
+                    mostrarLoading(false);
+                    showError('Erro: ' + error.message);
+                });
+        });
+
+        function abrirModalEntrega(id) {
+            document.getElementById('entrega-id').value = id;
+            document.getElementById('entrega-quem-retirou').value = '';
+            document.getElementById('modal-entrega').classList.add('active');
+        }
+
+        document.getElementById('form-entrega-encomenda').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const id = document.getElementById('entrega-id').value;
+            
+            mostrarLoading(true);
+            getEncomendasRef().child(id).update({
+                status: 'entregue',
+                dataEntrega: new Date().toISOString(),
+                quemRetirou: document.getElementById('entrega-quem-retirou').value.trim(),
+                entreguePor: usuarioLogado
+            })
+            .then(() => {
+                mostrarLoading(false);
+                showSuccess('Entrega registrada!');
+                fecharModalEntrega();
+                carregarEncomendas();
+            })
+            .catch((error) => {
+                mostrarLoading(false);
+                showError('Erro: ' + error.message);
+            });
+        });
+
+        function excluirEncomenda(id) {
+            if (!confirm('Mover para lixeira?')) return;
+            
+            getEncomendasRef().child(id).once('value').then((snapshot) => {
+                const encomenda = snapshot.val();
+                if (!encomenda) return;
+                
+                const itemLixeira = {
+                    tipo: 'encomenda',
+                    id: id,
+                    dados: encomenda,
+                    dataExclusao: new Date().toISOString(),
+                    excluidoPor: usuarioLogado,
+                    motivo: 'Exclusão manual'
+                };
+                
+                mostrarLoading(true);
+                
+                const updates = {};
+                updates[`condominios/${condominioId}/lixeira/${Date.now()}`] = itemLixeira;
+                updates[`condominios/${condominioId}/encomendas/${id}`] = null;
+                
+                db.ref().update(updates)
+                    .then(() => {
+                        mostrarLoading(false);
+                        showSuccess('Movido para lixeira!');
+                        carregarEncomendas();
+                    })
+                    .catch((error) => {
+                        mostrarLoading(false);
+                        showError('Erro: ' + error.message);
+                    });
+            });
+        }
+
+        // ==================== FINANCEIRO (CLOUD) ====================
+        function getLancamentosRef() {
+            return db.ref(`condominios/${condominioId}/lancamentos`);
+        }
+
+        function carregarLancamentos() {
+            getLancamentosRef().once('value').then((snapshot) => {
+                const data = snapshot.val() || {};
+                const lista = Object.values(data);
+                
+                // Resumo
+                const recebido = lista.filter(l => l.tipo === 'receita' && l.status === 'pago').reduce((s, l) => s + parseFloat(l.valor || 0), 0);
+                const pendente = lista.filter(l => l.status === 'pendente').reduce((s, l) => s + parseFloat(l.valor || 0), 0);
+                
+                document.getElementById('total-recebido').textContent = 'R$ ' + recebido.toFixed(2).replace('.', ',');
+                document.getElementById('total-pendente').textContent = 'R$ ' + pendente.toFixed(2).replace('.', ',');
+                document.getElementById('total-moradores').textContent = lista.length;
+                
+                // Tabela
+                const tbody = document.getElementById('lista-lancamentos-body');
+                tbody.innerHTML = '';
+                
+                lista.sort((a, b) => (b.dataVencimento || '').localeCompare(a.dataVencimento || '')).forEach(l => {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td>${l.dataVencimento ? new Date(l.dataVencimento).toLocaleDateString('pt-BR') : '-'}</td>
+                        <td>${l.descricao}</td>
+                        <td>R$ ${parseFloat(l.valor || 0).toFixed(2).replace('.', ',')}</td>
+                        <td><span class="badge ${l.status === 'pago' ? 'badge-PR' : 'badge-IN'}">${l.status}</span></td>
+                        <td>
+                            <button class="btn-icon btn-edit" onclick="toggleStatusLancamento('${l.id}')">${l.status === 'pago' ? '↩️' : '✅'}</button>
+                            <button class="btn-icon btn-delete" onclick="excluirLancamento('${l.id}')">🗑️</button>
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            });
+        }
+
+        document.getElementById('lancamentoForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const lancamento = {
+                tipo: document.getElementById('lanc-tipo').value,
+                descricao: document.getElementById('lanc-descricao').value.trim(),
+                valor: document.getElementById('lanc-valor').value,
+                dataVencimento: new Date().toISOString().split('T')[0],
+                status: 'pendente',
+                criadoPor: usuarioLogado
+            };
+            
+            mostrarLoading(true);
+            const ref = getLancamentosRef().push();
+            lancamento.id = ref.key;
+            
+            ref.set(lancamento)
+                .then(() => {
+                    mostrarLoading(false);
+                    showSuccess('Lançamento salvo na nuvem!');
+                    this.reset();
+                    carregarLancamentos();
+                })
+                .catch((error) => {
+                    mostrarLoading(false);
+                    showError('Erro: ' + error.message);
+                });
+        });
+
+        function toggleStatusLancamento(id) {
+            getLancamentosRef().child(id).once('value').then((snapshot) => {
+                const l = snapshot.val();
+                const novoStatus = l.status === 'pago' ? 'pendente' : 'pago';
+                
+                mostrarLoading(true);
+                getLancamentosRef().child(id).update({
+                    status: novoStatus,
+                    alteradoPor: usuarioLogado
+                })
+                .then(() => {
+                    mostrarLoading(false);
+                    carregarLancamentos();
+                })
+                .catch((error) => {
+                    mostrarLoading(false);
+                    showError('Erro: ' + error.message);
+                });
+            });
+        }
+
+        function excluirLancamento(id) {
+            if (!confirm('Mover para lixeira?')) return;
+            
+            getLancamentosRef().child(id).once('value').then((snapshot) => {
+                const lancamento = snapshot.val();
+                if (!lancamento) return;
+                
+                const itemLixeira = {
+                    tipo: 'lancamento',
+                    id: id,
+                    dados: lancamento,
+                    dataExclusao: new Date().toISOString(),
+                    excluidoPor: usuarioLogado,
+                    motivo: 'Exclusão manual'
+                };
+                
+                mostrarLoading(true);
+                
+                const updates = {};
+                updates[`condominios/${condominioId}/lixeira/${Date.now()}`] = itemLixeira;
+                updates[`condominios/${condominioId}/lancamentos/${id}`] = null;
+                
+                db.ref().update(updates)
+                    .then(() => {
+                        mostrarLoading(false);
+                        showSuccess('Movido para lixeira!');
+                        carregarLancamentos();
+                    })
+                    .catch((error) => {
+                        mostrarLoading(false);
+                        showError('Erro: ' + error.message);
+                    });
+            });
+        }
+
+        // ==================== LIXEIRA (CLOUD) ====================
+        function getLixeiraRef() {
+            return db.ref(`condominios/${condominioId}/lixeira`);
+        }
+
+        function carregarLixeira() {
+            getLixeiraRef().once('value').then((snapshot) => {
+                const data = snapshot.val() || {};
+                const lista = Object.values(data);
+                
+                // Resumo
+                document.getElementById('lixeira-total').textContent = lista.length;
+                document.getElementById('lixeira-moradores').textContent = lista.filter(i => i.tipo === 'morador').length;
+                document.getElementById('lixeira-lancamentos').textContent = lista.filter(i => i.tipo === 'lancamento').length;
+                document.getElementById('lixeira-encomendas').textContent = lista.filter(i => i.tipo === 'encomenda').length;
+                
+                // Todos
+                const tbody = document.getElementById('lista-lixeira-body');
+                tbody.innerHTML = '';
+                
+                lista.sort((a, b) => b.dataExclusao.localeCompare(a.dataExclusao)).forEach(item => {
+                    let desc = '';
+                    switch(item.tipo) {
+                        case 'morador': desc = `${item.dados.nome} (${item.dados.rua}, ${item.dados.numero})`; break;
+                        case 'lancamento': desc = `${item.dados.descricao} - R$${item.dados.valor}`; break;
+                        case 'encomenda': desc = `${item.dados.tipo} para ${item.dados.moradorNome}`; break;
+                        default: desc = 'Item';
+                    }
+                    
+                    const tr = document.createElement('tr');
+                    tr.className = 'item-excluido';
+                    tr.innerHTML = `
+                        <td><span class="badge badge-${item.tipo === 'morador' ? 'PR' : item.tipo === 'lancamento' ? 'IN' : 'MO'}">${item.tipo}</span></td>
+                        <td>${desc}</td>
+                        <td class="data-exclusao">${new Date(item.dataExclusao).toLocaleString('pt-BR')}</td>
+                        <td class="quem-excluiu">${item.excluidoPor}</td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+                
+                // Moradores
+                const tbodyM = document.getElementById('lista-lixeira-moradores-body');
+                tbodyM.innerHTML = '';
+                lista.filter(i => i.tipo === 'morador').forEach(item => {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td>${item.id.substring(0, 8)}</td>
+                        <td>${item.dados.nome}</td>
+                        <td>${item.dados.rua}, ${item.dados.numero}</td>
+                        <td class="data-exclusao">${new Date(item.dataExclusao).toLocaleString('pt-BR')}</td>
+                        <td class="quem-excluiu">${item.excluidoPor}</td>
+                    `;
+                    tbodyM.appendChild(tr);
+                });
+                
+                // Lançamentos
+                const tbodyL = document.getElementById('lista-lixeira-lancamentos-body');
+                tbodyL.innerHTML = '';
+                lista.filter(i => i.tipo === 'lancamento').forEach(item => {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td>${item.id.substring(0, 8)}</td>
+                        <td>${item.dados.descricao}</td>
+                        <td>R$ ${parseFloat(item.dados.valor || 0).toFixed(2)}</td>
+                        <td class="data-exclusao">${new Date(item.dataExclusao).toLocaleString('pt-BR')}</td>
+                        <td class="quem-excluiu">${item.excluidoPor}</td>
+                    `;
+                    tbodyL.appendChild(tr);
+                });
+                
+                // Encomendas
+                const tbodyE = document.getElementById('lista-lixeira-encomendas-body');
+                tbodyE.innerHTML = '';
+                lista.filter(i => i.tipo === 'encomenda').forEach(item => {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td>${item.id.substring(0, 8)}</td>
+                        <td>${item.dados.tipo}</td>
+                        <td>${item.dados.moradorNome}</td>
+                        <td class="data-exclusao">${new Date(item.dataExclusao).toLocaleString('pt-BR')}</td>
+                        <td class="quem-excluiu">${item.excluidoPor}</td>
+                    `;
+                    tbodyE.appendChild(tr);
+                });
+            });
+        }
+
+        function limparLixeira() {
+            if (lista.length === 0) { showError('Lixeira vazia!'); return; }
+            if (!confirm('⚠️ ATENÇÃO: Isso apagará PERMANENTEMENTE todos os itens da lixeira!\n\nConfirma?')) return;
+            if (!confirm('Tem certeza absoluta? Esta ação não pode ser desfeita.')) return;
+            
+            mostrarLoading(true);
+            getLixeiraRef().remove()
+                .then(() => {
+                    mostrarLoading(false);
+                    showSuccess('Lixeira esvaziada!');
+                    carregarLixeira();
+                })
+                .catch((error) => {
+                    mostrarLoading(false);
+                    showError('Erro: ' + error.message);
+                });
+        }
+
+        // ==================== UTILITÁRIOS ====================
+        function carregarMoradoresSelect(selectId) {
+            const select = document.getElementById(selectId);
+            select.innerHTML = '<option value="">Selecione...</option>';
+            
+            getMoradoresRef().once('value').then((snapshot) => {
+                const data = snapshot.val() || {};
+                const lista = Object.values(data).sort((a, b) => a.nome.localeCompare(b.nome));
+                
+                lista.forEach(m => {
+                    const option = document.createElement('option');
+                    option.value = m.id;
+                    option.textContent = `${m.nome} - ${m.rua}, ${m.numero}`;
+                    select.appendChild(option);
+                });
+            });
+        }
+
+        function iniciarRelogio(elementId) {
+            function atualizar() {
+                const el = document.getElementById(elementId);
+                if (el) el.textContent = 'Data: ' + new Date().toLocaleString('pt-BR');
+            }
+            atualizar();
+            setInterval(atualizar, 1000);
+        }
+
+        function mostrarLoading(mostrar) {
+            document.getElementById('loading').classList.toggle('active', mostrar);
+        }
+
+        function showSuccess(msg) {
+            const el = document.getElementById('success-msg');
+            el.textContent = '✅ ' + msg;
+            el.style.display = 'block';
+            document.getElementById('error-msg').style.display = 'none';
+            setTimeout(() => el.style.display = 'none', 4000);
+        }
+
+        function showError(msg) {
+            const el = document.getElementById('error-msg');
+            el.textContent = '❌ ' + msg;
+            el.style.display = 'block';
+            document.getElementById('success-msg').style.display = 'none';
+            setTimeout(() => el.style.display = 'none', 5000);
+        }
+
+        function hideMessages() {
+            document.getElementById('success-msg').style.display = 'none';
+            document.getElementById('error-msg').style.display = 'none';
+        }
+
+        function fecharModal() { document.getElementById('modal-editar').classList.remove('active'); }
+        function fecharModalConfirmar() { document.getElementById('modal-confirmar').classList.remove('active'); }
+        function fecharModalEntrega() { document.getElementById('modal-entrega').classList.remove('active'); }
+
+        // Abas
+        function switchTabVisitantes(tab) {
+            document.querySelectorAll('#form-visitantes .tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('#form-visitantes .tab-content').forEach(t => t.classList.remove('active'));
+            event.target.classList.add('active');
+            document.getElementById(`tab-visitantes-${tab}`).classList.add('active');
+            if (tab === 'historico') carregarHistoricoVisitantes();
+        }
+
+        function switchTabDeliveres(tab) {
+            document.querySelectorAll('#form-deliveres .tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('#form-deliveres .tab-content').forEach(t => t.classList.remove('active'));
+            event.target.classList.add('active');
+            document.getElementById(`tab-deliveres-${tab}`).classList.add('active');
+        }
+
+        function switchTabEncomendas(tab) {
+            document.querySelectorAll('#form-encomendas .tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('#form-encomendas .tab-content').forEach(t => t.classList.remove('active'));
+            event.target.classList.add('active');
+            document.getElementById(`tab-encomendas-${tab}`).classList.add('active');
+        }
+
+        function switchTab(tab) {
+            document.querySelectorAll('#form-financeiro .tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('#form-financeiro .tab-content').forEach(t => t.classList.remove('active'));
+            event.target.classList.add('active');
+            document.getElementById(`tab-${tab}`).classList.add('active');
+        }
+
+        function switchTabLixeira(tab) {
+            document.querySelectorAll('#form-lixeira .tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('#form-lixeira .tab-content').forEach(t => t.classList.remove('active'));
+            event.target.classList.add('active');
+            document.getElementById(`tab-lixeira-${tab}`).classList.add('active');
+        }
+
+        function toggleLocatarioFields() {
+            const situacao = document.getElementById('morador-situacao').value;
+            const fields = document.getElementById('locatario-fields');
+            fields.classList.toggle('show', situacao === 'IN');
+        }
+
+        // Exportar/Importar
+        function exportarCSV() {
+            getMoradoresRef().once('value').then((snapshot) => {
+                const data = snapshot.val() || {};
+                const lista = Object.values(data);
+                
+                if (lista.length === 0) { showError('Nada para exportar!'); return; }
+                
+                let csv = 'ID,Nome,Telefone,Rua,Numero,Situacao\n';
+                lista.forEach(m => {
+                    csv += `${m.id},"${m.nome}",${m.telefone},"${m.rua}",${m.numero},${m.situacao}\n`;
+                });
+                
+                const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' });
+                const link = document.createElement('a');
+                link.href = URL.createObjectURL(blob);
+                link.download = `moradores_${new Date().toISOString().split('T')[0]}.csv`;
+                link.click();
+                showSuccess('CSV exportado!');
+            });
+        }
+
+        function exportarJSON() {
+            mostrarLoading(true);
+            
+            const promises = [
+                getMoradoresRef().once('value'),
+                getVisitantesRef().once('value'),
+                getDeliveresRef().once('value'),
+                getEncomendasRef().once('value'),
+                getLancamentosRef().once('value'),
+                getLixeiraRef().once('value')
+            ];
+            
+            Promise.all(promises).then(results => {
+                const dados = {
+                    moradores: results[0].val() || {},
+                    visitantes: results[1].val() || {},
+                    deliveres: results[2].val() || {},
+                    encomendas: results[3].val() || {},
+                    lancamentos: results[4].val() || {},
+                    lixeira: results[5].val() || {},
+                    exportadoEm: new Date().toISOString(),
+                    exportadoPor: usuarioLogado
+                };
+                
+                const blob = new Blob([JSON.stringify(dados, null, 2)], { type: 'application/json' });
+                const link = document.createElement('a');
+                link.href = URL.createObjectURL(blob);
+                link.download = `backup_condominio_${new Date().toISOString().split('T')[0]}.json`;
+                link.click();
+                
+                mostrarLoading(false);
+                showSuccess('Backup exportado!');
+            }).catch(error => {
+                mostrarLoading(false);
+                showError('Erro: ' + error.message);
+            });
+        }
+
+        function importarJSON(input) {
+            const file = input.files[0];
+            if (!file) return;
+            
+            if (!confirm('Isso substituirá todos os dados atuais. Continuar?')) {
+                input.value = '';
+                return;
+            }
+            
+            mostrarLoading(true);
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const dados = JSON.parse(e.target.result);
+                    
+                    const updates = {};
+                    if (dados.moradores) updates[`condominios/${condominioId}/moradores`] = dados.moradores;
+                    if (dados.visitantes) updates[`condominios/${condominioId}/visitantes`] = dados.visitantes;
+                    if (dados.deliveres) updates[`condominios/${condominioId}/deliveres`] = dados.deliveres;
+                    if (dados.encomendas) updates[`condominios/${condominioId}/encomendas`] = dados.encomendas;
+                    if (dados.lancamentos) updates[`condominios/${condominioId}/lancamentos`] = dados.lancamentos;
+                    if (dados.lixeira) updates[`condominios/${condominioId}/lixeira`] = dados.lixeira;
+                    
+                    db.ref().update(updates)
+                        .then(() => {
+                            mostrarLoading(false);
+                            showSuccess('Dados importados!');
+                            input.value = '';
+                        })
+                        .catch((error) => {
+                            mostrarLoading(false);
+                            showError('Erro: ' + error.message);
+                        });
+                    
+                } catch (err) {
+                    mostrarLoading(false);
+                    showError('Arquivo inválido!');
+                    input.value = '';
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        function limparTodosDados() {
+            if (!confirm('⚠️ ATENÇÃO: Isso apagará TODOS os dados permanentemente!\n\nConfirma?')) return;
+            if (!confirm('Tem certeza absoluta? Esta ação não pode ser desfeita.')) return;
+            if (!confirm('Última chance! Todos os moradores, visitantes, encomendas, financeiro e lixeira serão apagados. Continuar?')) return;
+            
+            mostrarLoading(true);
+            
+            db.ref(`condominios/${condominioId}`).remove()
+                .then(() => {
+                    mostrarLoading(false);
+                    showSuccess('Todos os dados apagados!');
+                    setTimeout(() => location.reload(), 2000);
+                })
+                .catch((error) => {
+                    mostrarLoading(false);
+                    showError('Erro: ' + error.message);
+                });
+        }
+
+        function carregarEstatisticas() {
+            const promises = [
+                getMoradoresRef().once('value'),
+                getVisitantesRef().once('value'),
+                getDeliveresRef().once('value'),
+                getEncomendasRef().once('value'),
+                getLixeiraRef().once('value')
+            ];
+            
+            Promise.all(promises).then(results => {
+                const hoje = new Date().toDateString();
+                
+                document.getElementById('stats-moradores').textContent = results[0].numChildren();
+                document.getElementById('stats-visitantes-hoje').textContent = 
+                    Object.values(results[1].val() || {}).filter(v => new Date(v.dataEntrada).toDateString() === hoje).length;
+                document.getElementById('stats-deliveres-hoje').textContent = 
+                    Object.values(results[2].val() || {}).filter(d => new Date(d.dataEntrada).toDateString() === hoje).length;
+                document.getElementById('stats-encomendas-pendentes').textContent = 
+                    Object.values(results[3].val() || {}).filter(e => e.status === 'pendente').length;
+                document.getElementById('stats-lixeira').textContent = results[4].numChildren();
+            });
+        }
+
+        function exportarLixeiraCSV() {
+            getLixeiraRef().once('value').then((snapshot) => {
+                const data = snapshot.val() || {};
+                const lista = Object.values(data);
+                
+                if (lista.length === 0) { showError('Lixeira vazia!'); return; }
+                
+                let csv = 'Tipo,ID,Descricao,DataExclusao,ExcluidoPor\n';
+                lista.forEach(item => {
+                    let desc = '';
+                    switch(item.tipo) {
+                        case 'morador': desc = item.dados.nome; break;
+                        case 'lancamento': desc = item.dados.descricao; break;
+                        case 'encomenda': desc = `${item.dados.tipo} - ${item.dados.moradorNome}`; break;
+                        default: desc = 'Item';
+                    }
+                    csv += `${item.tipo},${item.id},"${desc}",${item.dataExclusao},${item.excluidoPor}\n`;
+                });
+                
+                const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' });
+                const link = document.createElement('a');
+                link.href = URL.createObjectURL(blob);
+                link.download = `lixeira_${new Date().toISOString().split('T')[0]}.csv`;
+                link.click();
+                showSuccess('Lixeira exportada!');
+            });
+        }
+
+        // Máscaras
+        ['morador-telefone', 'edit-telefone', 'visitante-telefone'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) {
+                el.addEventListener('input', function(e) {
+                    let value = e.target.value.replace(/\D/g, '');
+                    if (value.length <= 11) {
+                        value = value.replace(/^(\d{2})(\d)/g, '($1) $2');
+                        value = value.replace(/(\d)(\d{4})$/, '$1-$2');
+                        e.target.value = value;
+                    }
+                });
+            }
+        });
+
+        // Inicialização
+        window.onload = function() {
+            if (!carregarConfigFirebase()) {
+                mostrarForm('config-firebase');
+            }
+        };
+
+        window.onclick = function(event) {
+            if (event.target.classList.contains('modal')) {
+                event.target.classList.remove('active');
+            }
+        };
+    </script>
+</body>
+</html>

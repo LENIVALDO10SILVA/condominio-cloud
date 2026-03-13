@@ -1363,7 +1363,7 @@
 
     <script>
         // ==================== CONFIGURAÇÃO FIREBASE ====================
-        let firebaseConfig = {
+       let firebaseConfig = {
     apiKey: "AIzaSyDN5--gndzdi0xzitoGCYao4Jb0HA",
     authDomain: "condominio-cloud-1e07a.firebaseapp.com",
     databaseURL: "https://condominio-cloud-1e07a-default-rtdb.firebaseio.com",
@@ -1377,7 +1377,7 @@ let auth = null;
 let condominioId = null;
 let usuarioLogado = null;
 let isOnline = true;
-
+        
         // Carregar configuração salva
         function carregarConfigFirebase() {
             const config = localStorage.getItem('condominio_firebase_config');
@@ -2691,10 +2691,6 @@ if (!firebase.apps.length) {
 // if (!carregarConfigFirebase()) {
 //     mostrarForm('config-firebase');
 // }
-        };
-
-        window.onclick = function(event) {
-            if (event.target.classList.contains('modal')) {
                 event.target.classList.remove('active');
             }
         };

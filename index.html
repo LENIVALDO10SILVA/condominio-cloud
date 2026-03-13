@@ -1363,12 +1363,20 @@
 
     <script>
         // ==================== CONFIGURAÇÃO FIREBASE ====================
-        let firebaseConfig = null;
-        let db = null;
-        let auth = null;
-        let condominioId = null;
-        let usuarioLogado = null;
-        let isOnline = true;
+        let firebaseConfig = {
+    apiKey: "AIzaSyDN5--gndzdi0xzitoGCYao4Jb0HA",
+    authDomain: "condominio-cloud-1e07a.firebaseapp.com",
+    databaseURL: "https://condominio-cloud-1e07a-default-rtdb.firebaseio.com",
+    projectId: "condominio-cloud-1e07a",
+    storageBucket: "condominio-cloud-1e07a.appspot.com",
+    messagingSenderId: "195769571816",
+    appId: "1:195769571816:web:fa027267c923bdd1dbec5d"
+};
+let db = null;
+let auth = null;
+let condominioId = null;
+let usuarioLogado = null;
+let isOnline = true;
 
         // Carregar configuração salva
         function carregarConfigFirebase() {
@@ -2676,17 +2684,13 @@
                     if (value.length <= 11) {
                         value = value.replace(/^(\d{2})(\d)/g, '($1) $2');
                         value = value.replace(/(\d)(\d{4})$/, '$1-$2');
-                        e.target.value = value;
-                    }
-                });
-            }
-        });
-
-        // Inicialização
-        window.onload = function() {
-            if (!carregarConfigFirebase()) {
-                mostrarForm('config-firebase');
-            }
+                        // Configuração fixa - sempre inicializa
+if (!firebase.apps.length) {
+    inicializarFirebase();
+}
+// if (!carregarConfigFirebase()) {
+//     mostrarForm('config-firebase');
+// }
         };
 
         window.onclick = function(event) {

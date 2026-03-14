@@ -1378,44 +1378,20 @@ let condominioId = null;
 let usuarioLogado = null;
 let isOnline = true;
         
-        // Carregar configuração salva
         function carregarConfigFirebase() {
-            const config = localStorage.getItem('condominio_firebase_config');
-            if (config) {
-                firebaseConfig = JSON.parse(config);
-                inicializarFirebase();
-                return true;
-            }
-            return false;
-        }
+    if (!firebase.apps.length) {
+        inicializarFirebase();
+    }
+    return true;
+}
 
         function salvarConfigFirebase() {
-            const apiKey = document.getElementById('firebase-apiKey').value.trim();
-            const databaseURL = document.getElementById('firebase-databaseURL').value.trim();
-            const projectId = document.getElementById('firebase-projectId').value.trim();
-
-            if (!apiKey || !databaseURL || !projectId) {
-                showError('Preencha todos os campos!');
-                return;
-            }
-
-            firebaseConfig = {
-                apiKey: apiKey,
-                authDomain: `${projectId}.firebaseapp.com`,
-                databaseURL: databaseURL,
-                projectId: projectId,
-                storageBucket: `${projectId}.appspot.com`,
-                messagingSenderId: "000000000000",
-                appId: "1:000000000000:web:0000000000000000"
-            };
-
-            localStorage.setItem('condominio_firebase_config', JSON.stringify(firebaseConfig));
-            showSuccess('Configuração salva! Inicializando...');
-            
-            setTimeout(() => {
-                location.reload();
-            }, 1500);
-        }
+    if (!firebase.apps.length) {
+        inicializarFirebase();
+    }
+    mostrarTela('login');
+    return false;
+}    
 
         function inicializarFirebase() {
             try {

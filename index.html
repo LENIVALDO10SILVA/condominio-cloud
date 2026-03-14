@@ -2684,16 +2684,30 @@ let isOnline = true;
                     if (value.length <= 11) {
                         value = value.replace(/^(\d{2})(\d)/g, '($1) $2');
                         value = value.replace(/(\d)(\d{4})$/, '$1-$2');
-                        // Configuração fixa - sempre inicializa
+// Configuração fixa - sempre inicializa
 if (!firebase.apps.length) {
     inicializarFirebase();
 }
-// if (!carregarConfigFirebase()) {
-//     mostrarForm('config-firebase');
-// }
-                event.target.classList.remove('active');
-            }
-        };
-    </script>
-</body>
-</html>
+
+// Inicialização
+window.onload = function() {
+    // Verificar se usuário está logado
+    auth.onAuthStateChanged(function(user) {
+        if (user) {
+            // Usuário logado - mostrar dashboard
+            usuarioLogado = user;
+            mostrarTela('dashboard');
+            carregarDadosCondominio();
+        } else {
+            // Usuário não logado - mostrar login
+            mostrarTela('login');
+        }
+    });
+};
+
+// Fechar modais ao clicar fora
+window.onclick = function(event) {
+    if (event.target.classList.contains('modal')) {
+        event.target.classList.remove('active');
+    }
+};

@@ -1392,11 +1392,6 @@ let isOnline = true;
     mostrarTela('login');
     return false;
 }    
-
-        function inicializarFirebase() {
-            try {
-                firebase.initializeApp(firebaseConfig);
-                db = firebase.database();
                 auth = firebase.auth();
                 
                 // Monitorar conexão

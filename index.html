@@ -1393,14 +1393,7 @@ let isOnline = true;
     return false;
 }    
                 auth = firebase.auth();
-                
-                // Monitorar conexão
-                const connectedRef = db.ref('.info/connected');
-                connectedRef.on('value', (snap) => {
-                    isOnline = snap.val() === true;
-                    atualizarStatusConexao();
-                });
-
+               
                 // Verificar autenticação
                 auth.onAuthStateChanged((user) => {
                     if (user) {

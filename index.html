@@ -589,7 +589,47 @@
         <!-- Tela de Configuração Firebase -->
         <div id="form-config-firebase" class="form-section active">
             <div class="form-container">
-               
+                <h2 style="margin-bottom: 20px; color: #333; font-size: 18px;">🔧 Configuração Inicial</h2>
+                
+                <div class="config-section">
+                    <h3>1. Crie uma conta gratuita no Firebase</h3>
+                    <p style="font-size: 12px; color: #666; margin-bottom: 10px;">
+                        Acesse <a href="https://console.firebase.google.com" target="_blank">console.firebase.google.com</a> 
+                        e crie um projeto gratuito.
+                    </p>
+                </div>
+
+                <div class="config-section">
+                    <h3>2. Cole as configurações do Firebase</h3>
+                    <p style="font-size: 11px; color: #666; margin-bottom: 10px;">
+                        Em Configurações > Geral > Seus aplicativos > SDK do Firebase
+                    </p>
+                    <div class="form-group">
+                        <label>apiKey</label>
+                        <input type="text" id="firebase-apiKey" placeholder="AIzaSy..." value="">
+                    </div>
+                    <div class="form-group">
+                        <label>databaseURL</label>
+                        <input type="text" id="firebase-databaseURL" placeholder="https://seu-projeto.firebaseio.com" value="">
+                    </div>
+                    <div class="form-group">
+                        <label>projectId</label>
+                        <input type="text" id="firebase-projectId" placeholder="seu-projeto-123" value="">
+                    </div>
+                    <button class="btn" onclick="salvarConfigFirebase()">💾 Salvar Configuração</button>
+                </div>
+
+                <div class="config-section" style="background: #e8f5e9;">
+                    <h3>💡 Dica</h3>
+                    <p style="font-size: 11px; color: #666;">
+                        Esta configuração precisa ser feita apenas uma vez. 
+                        Em outros dispositivos, use o mesmo projeto Firebase para sincronizar tudo.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Login/Cadastro -->
         <div id="form-login" class="form-section">
             <div class="form-container">
                 <h2 style="margin-bottom: 20px; color: #333; font-size: 18px;">Acessar Sistema</h2>
@@ -1323,37 +1363,65 @@
 
     <script>
         // ==================== CONFIGURAÇÃO FIREBASE ====================
-       let firebaseConfig = {
-    apiKey: "AIzaSyDN5--gndzdi0xzitoGCYao4Jb0HA",
-    authDomain: "condominio-cloud-1e07a.firebaseapp.com",
-    databaseURL: "https://condominio-cloud-1e07a-default-rtdb.firebaseio.com",
-    projectId: "condominio-cloud-1e07a",
-    storageBucket: "condominio-cloud-1e07a.appspot.com",
-    messagingSenderId: "195769571816",
-    appId: "1:195769571816:web:fa027267c923bdd1dbec5d"
-};
-let db = null;
-let auth = null;
-let condominioId = null;
-let usuarioLogado = null;
-let isOnline = true;
-        
+        let firebaseConfig = null;
+        let db = null;
+        let auth = null;
+        let condominioId = null;
+        let usuarioLogado = null;
+        let isOnline = true;
+
+        // Carregar configuração salva
         function carregarConfigFirebase() {
-    if (!firebase.apps.length) {
-        inicializarFirebase();
-    }
-    return true;
-}
+            const config = localStorage.getItem('condominio_firebase_config');
+            if (config) {
+                firebaseConfig = JSON.parse(config);
+                inicializarFirebase();
+                return true;
+            }
+            return false;
+        }
 
         function salvarConfigFirebase() {
-    if (!firebase.apps.length) {
-        inicializarFirebase();
-    }
-    mostrarTela('login');
-    return false;
-}    
+            const apiKey = document.getElementById('firebase-apiKey').value.trim();
+            const databaseURL = document.getElementById('firebase-databaseURL').value.trim();
+            const projectId = document.getElementById('firebase-projectId').value.trim();
+
+            if (!apiKey || !databaseURL || !projectId) {
+                showError('Preencha todos os campos!');
+                return;
+            }
+
+            firebaseConfig = {
+                apiKey: apiKey,
+                authDomain: `${projectId}.firebaseapp.com`,
+                databaseURL: databaseURL,
+                projectId: projectId,
+                storageBucket: `${projectId}.appspot.com`,
+                messagingSenderId: "000000000000",
+                appId: "1:000000000000:web:0000000000000000"
+            };
+
+            localStorage.setItem('condominio_firebase_config', JSON.stringify(firebaseConfig));
+            showSuccess('Configuração salva! Inicializando...');
+            
+            setTimeout(() => {
+                location.reload();
+            }, 1500);
+        }
+
+        function inicializarFirebase() {
+            try {
+                firebase.initializeApp(firebaseConfig);
+                db = firebase.database();
                 auth = firebase.auth();
-               
+                
+                // Monitorar conexão
+                const connectedRef = db.ref('.info/connected');
+                connectedRef.on('value', (snap) => {
+                    isOnline = snap.val() === true;
+                    atualizarStatusConexao();
+                });
+
                 // Verificar autenticação
                 auth.onAuthStateChanged((user) => {
                     if (user) {
@@ -2608,30 +2676,24 @@ let isOnline = true;
                     if (value.length <= 11) {
                         value = value.replace(/^(\d{2})(\d)/g, '($1) $2');
                         value = value.replace(/(\d)(\d{4})$/, '$1-$2');
-// Configuração fixa - sempre inicializa
-if (!firebase.apps.length) {
-    inicializarFirebase();
-}
+                        e.target.value = value;
+                    }
+                });
+            }
+        });
 
-// Inicialização
-window.onload = function() {
-    // Verificar se usuário está logado
-    auth.onAuthStateChanged(function(user) {
-        if (user) {
-            // Usuário logado - mostrar dashboard
-            usuarioLogado = user;
-            mostrarTela('dashboard');
-            carregarDadosCondominio();
-        } else {
-            // Usuário não logado - mostrar login
-            mostrarTela('login');
-        }
-    });
-};
+        // Inicialização
+        window.onload = function() {
+            if (!carregarConfigFirebase()) {
+                mostrarForm('config-firebase');
+            }
+        };
 
-// Fechar modais ao clicar fora
-window.onclick = function(event) {
-    if (event.target.classList.contains('modal')) {
-        event.target.classList.remove('active');
-    }
-};
+        window.onclick = function(event) {
+            if (event.target.classList.contains('modal')) {
+                event.target.classList.remove('active');
+            }
+        };
+    </script>
+</body>
+</html>

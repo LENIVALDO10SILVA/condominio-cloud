@@ -95,18 +95,6 @@
         .sync-status.offline { background: rgba(231, 76, 60, 0.3); }
         .sync-status.syncing { background: rgba(243, 156, 18, 0.3); }
 
-        .user-type-badge {
-            background: rgba(255,255,255,0.3);
-            padding: 2px 8px;
-            border-radius: 10px;
-            font-size: 10px;
-            font-weight: bold;
-            text-transform: uppercase;
-        }
-
-        .user-type-badge.admin { background: #27ae60; }
-        .user-type-badge.agente { background: #f39c12; }
-
         @media (max-width: 768px) {
             .user-info-header, .sync-status {
                 position: static;
@@ -141,7 +129,7 @@
             padding: 12px;
             border: 2px solid #e0e0e0;
             border-radius: 10px;
-            font-size: 16px;
+            font-size: 16px; /* Prevents zoom on iOS */
             transition: all 0.3s ease;
             font-family: inherit;
             -webkit-appearance: none;
@@ -187,8 +175,6 @@
         .btn-success:hover { background: #229954; }
         .btn-dark { background: #2c3e50; }
         .btn-dark:hover { background: #34495e; }
-        .btn-orange { background: #f39c12; }
-        .btn-orange:hover { background: #e67e22; }
 
         .btn-small {
             padding: 8px 12px;
@@ -245,17 +231,6 @@
         .menu-item.lixeira:hover {
             border-color: #e74c3c;
             background: #34495e;
-        }
-
-        .menu-item.agentes {
-            background: linear-gradient(135deg, #f39c12 0%, #e67e22 100%);
-            color: white;
-        }
-
-        .menu-item.agentes:hover {
-            border-color: #d35400;
-            transform: translateY(-3px);
-            box-shadow: 0 5px 15px rgba(243, 156, 18, 0.4);
         }
 
         .back-btn {
@@ -322,10 +297,6 @@
         .badge-saida { background: #f8d7da; color: #721c24; }
         .badge-entregue { background: #d4edda; color: #155724; }
         .badge-pendente { background: #fff3cd; color: #856404; }
-        .badge-admin { background: #d4edda; color: #155724; }
-        .badge-agente { background: #fff3cd; color: #856404; }
-        .badge-ativo { background: #d4edda; color: #155724; }
-        .badge-inativo { background: #f8d7da; color: #721c24; }
 
         .stats-grid {
             display: grid;
@@ -349,7 +320,6 @@
         .stat-card.orange { background: linear-gradient(135deg, #f39c12 0%, #e67e22 100%); }
         .stat-card.dark { background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%); }
         .stat-card.gray { background: linear-gradient(135deg, #95a5a6 0%, #7f8c8d 100%); }
-        .stat-card.purple { background: linear-gradient(135deg, #9b59b6 0%, #8e44ad 100%); }
 
         .tabs {
             display: flex;
@@ -381,11 +351,6 @@
         .tabs.lixeira-tabs .tab.active {
             color: #2c3e50;
             border-bottom-color: #2c3e50;
-        }
-
-        .tabs.agentes-tabs .tab.active {
-            color: #f39c12;
-            border-bottom-color: #f39c12;
         }
 
         .tab-content { display: none; }
@@ -432,15 +397,6 @@
 
         .lixeira-info {
             background: #2c3e50;
-            color: white;
-            padding: 12px;
-            border-radius: 8px;
-            margin-bottom: 15px;
-            font-size: 12px;
-        }
-
-        .agente-info {
-            background: linear-gradient(135deg, #f39c12 0%, #e67e22 100%);
             color: white;
             padding: 12px;
             border-radius: 8px;
@@ -528,6 +484,7 @@
             100% { transform: rotate(360deg); }
         }
 
+        /* Mobile optimizations */
         @media (max-width: 480px) {
             body { padding: 5px; }
             .container { border-radius: 15px; }
@@ -599,47 +556,6 @@
         @media (max-width: 480px) {
             .grid-2 { grid-template-columns: 1fr; }
         }
-
-        .login-type-selector {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 20px;
-            background: #f0f0f0;
-            padding: 5px;
-            border-radius: 10px;
-        }
-
-        .login-type-btn {
-            flex: 1;
-            padding: 10px;
-            border: none;
-            background: transparent;
-            border-radius: 8px;
-            cursor: pointer;
-            font-weight: 600;
-            color: #666;
-            transition: all 0.3s;
-        }
-
-        .login-type-btn.active {
-            background: white;
-            color: #667eea;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-        }
-
-        .login-type-btn.agente.active {
-            color: #f39c12;
-        }
-
-        .access-denied {
-            background: #fff3cd;
-            border: 1px solid #f39c12;
-            color: #856404;
-            padding: 15px;
-            border-radius: 10px;
-            margin-bottom: 15px;
-            text-align: center;
-        }
     </style>
 </head>
 <body>
@@ -660,9 +576,7 @@
                 <span>👤</span>
                 <div>
                     <div style="font-weight: 600;" id="header-user-name">-</div>
-                    <div style="font-size: 9px; opacity: 0.8;">
-                        <span id="header-user-type" class="user-type-badge">-</span>
-                    </div>
+                    <div style="font-size: 9px; opacity: 0.8;">Sincronizado</div>
                 </div>
             </div>
             <h1>🏢 Condomínio Cloud</h1>
@@ -719,32 +633,26 @@
         <div id="form-login" class="form-section">
             <div class="form-container">
                 <h2 style="margin-bottom: 20px; color: #333; font-size: 18px;">Acessar Sistema</h2>
-                
-                <div class="login-type-selector">
-                    <button class="login-type-btn active" onclick="switchLoginType('admin')">👤 Administrador</button>
-                    <button class="login-type-btn agente" onclick="switchLoginType('agente')">🛡️ Agente de Portaria</button>
-                </div>
-
                 <form id="loginForm">
                     <div class="form-group">
-                        <label id="login-email-label">Email do Condomínio</label>
+                        <label>Email do Condomínio</label>
                         <input type="email" id="login-email" required placeholder="condominio@email.com">
                     </div>
                     <div class="form-group">
                         <label>Senha</label>
                         <input type="password" id="login-senha" required placeholder="Sua senha" minlength="6">
                     </div>
-                    <button type="submit" class="btn" id="login-submit-btn">Entrar como Administrador</button>
+                    <button type="submit" class="btn">Entrar</button>
                 </form>
-                <p class="link" onclick="mostrarForm('cadastro-usuario')">Criar nova conta de administrador</p>
+                <p class="link" onclick="mostrarForm('cadastro-usuario')">Criar nova conta</p>
                 <p class="link" onclick="mostrarForm('config-firebase')" style="font-size: 12px; color: #999;">Reconfigurar Firebase</p>
             </div>
         </div>
 
-        <!-- Cadastro de Usuário (Administrador) -->
+        <!-- Cadastro de Usuário -->
         <div id="form-cadastro-usuario" class="form-section">
             <div class="form-container">
-                <h2 style="margin-bottom: 20px; color: #333; font-size: 18px;">Criar Conta de Administrador</h2>
+                <h2 style="margin-bottom: 20px; color: #333; font-size: 18px;">Criar Conta</h2>
                 <form id="cadastroForm">
                     <div class="form-group">
                         <label>Nome de Usuário</label>
@@ -762,16 +670,16 @@
                         <label>Confirmar Senha</label>
                         <input type="password" id="confirmar-senha" required placeholder="Repita a senha">
                     </div>
-                    <button type="submit" class="btn">Cadastrar Administrador</button>
+                    <button type="submit" class="btn">Cadastrar</button>
                 </form>
                 <p class="link" onclick="mostrarForm('login')">Já tem conta? Faça login</p>
             </div>
         </div>
 
-        <!-- Dashboard Administrador -->
-        <div id="dashboard-admin" class="dashboard">
-            <h2 style="margin-bottom: 10px; color: #333; font-size: 18px;">Bem-vindo, <span id="user-name-admin"></span>! <span class="user-type-badge admin">ADMIN</span></h2>
-            <p style="color: #666; margin-bottom: 20px; font-size: 13px;">Acesso total ao sistema:</p>
+        <!-- Dashboard -->
+        <div id="dashboard" class="dashboard">
+            <h2 style="margin-bottom: 10px; color: #333; font-size: 18px;">Bem-vindo, <span id="user-name"></span>!</h2>
+            <p style="color: #666; margin-bottom: 20px; font-size: 13px;">Escolha uma opção:</p>
             
             <div class="menu-grid">
                 <div class="menu-item" onclick="mostrarForm('cadastro-morador')">
@@ -798,10 +706,6 @@
                     <div style="font-size: 24px; margin-bottom: 5px;">💰</div>
                     <h3 style="font-size: 11px;">Financeiro</h3>
                 </div>
-                <div class="menu-item agentes" onclick="mostrarForm('agentes-portaria')">
-                    <div style="font-size: 24px; margin-bottom: 5px;">🛡️</div>
-                    <h3 style="font-size: 11px;">Agentes Portaria</h3>
-                </div>
                 <div class="menu-item" onclick="mostrarForm('configuracoes')">
                     <div style="font-size: 24px; margin-bottom: 5px;">⚙️</div>
                     <h3 style="font-size: 11px;">Configurações</h3>
@@ -815,37 +719,10 @@
             <button class="btn btn-secondary" onclick="logout()" style="margin-top: 20px;">Sair</button>
         </div>
 
-        <!-- Dashboard Agente -->
-        <div id="dashboard-agente" class="dashboard">
-            <h2 style="margin-bottom: 10px; color: #333; font-size: 18px;">Bem-vindo, <span id="user-name-agente"></span>! <span class="user-type-badge agente">AGENTE</span></h2>
-            <p style="color: #666; margin-bottom: 20px; font-size: 13px;">Acesso restrito - Operações de portaria:</p>
-            
-            <div class="menu-grid">
-                <div class="menu-item" onclick="mostrarForm('visitantes')">
-                    <div style="font-size: 24px; margin-bottom: 5px;">🚶</div>
-                    <h3 style="font-size: 11px;">Visitantes</h3>
-                </div>
-                <div class="menu-item" onclick="mostrarForm('deliveres')">
-                    <div style="font-size: 24px; margin-bottom: 5px;">🛵</div>
-                    <h3 style="font-size: 11px;">Deliveres</h3>
-                </div>
-                <div class="menu-item" onclick="mostrarForm('encomendas')">
-                    <div style="font-size: 24px; margin-bottom: 5px;">📦</div>
-                    <h3 style="font-size: 11px;">Encomendas</h3>
-                </div>
-                <div class="menu-item" onclick="mostrarForm('lista-moradores')">
-                    <div style="font-size: 24px; margin-bottom: 5px;">📋</div>
-                    <h3 style="font-size: 11px;">Consultar Moradores</h3>
-                </div>
-            </div>
-            
-            <button class="btn btn-secondary" onclick="logout()" style="margin-top: 20px;">Sair</button>
-        </div>
-
         <!-- Cadastro de Morador -->
         <div id="form-cadastro-morador" class="form-section">
             <div class="form-container">
-                <button class="back-btn" onclick="mostrarForm('dashboard-admin')">← Voltar</button>
+                <button class="back-btn" onclick="mostrarForm('dashboard')">← Voltar</button>
                 <h2 style="margin-bottom: 20px; color: #333; font-size: 18px;">Cadastro de Morador</h2>
                 
                 <div class="user-registrando-info">
@@ -898,7 +775,7 @@
                         </div>
                     </div>
                     <button type="submit" class="btn">💾 Salvar na Nuvem</button>
-                    <button type="button" class="btn btn-secondary" onclick="mostrarForm('dashboard-admin')">Cancelar</button>
+                    <button type="button" class="btn btn-secondary" onclick="mostrarForm('dashboard')">Cancelar</button>
                 </form>
             </div>
         </div>
@@ -906,7 +783,7 @@
         <!-- Lista de Moradores -->
         <div id="form-lista-moradores" class="form-section">
             <div class="form-container">
-                <button class="back-btn" onclick="voltarDashboard()">← Voltar</button>
+                <button class="back-btn" onclick="mostrarForm('dashboard')">← Voltar</button>
                 <h2 style="margin-bottom: 20px; color: #333; font-size: 18px;">Lista de Moradores</h2>
                 
                 <div class="search-box">
@@ -941,7 +818,7 @@
                     <p>Nenhum morador cadastrado</p>
                 </div>
                 
-                <div class="quick-actions" style="margin-top: 15px;" id="acoes-moradores-admin">
+                <div class="quick-actions" style="margin-top: 15px;">
                     <button class="btn btn-success btn-small" onclick="exportarCSV()">📊 Exportar</button>
                     <button class="btn btn-small" onclick="mostrarForm('cadastro-morador')">+ Novo</button>
                 </div>
@@ -951,7 +828,7 @@
         <!-- Visitantes -->
         <div id="form-visitantes" class="form-section">
             <div class="form-container">
-                <button class="back-btn" onclick="voltarDashboard()">← Voltar</button>
+                <button class="back-btn" onclick="mostrarForm('dashboard')">← Voltar</button>
                 <h2 style="margin-bottom: 20px; color: #333; font-size: 18px;">🚶 Visitantes</h2>
                 
                 <div class="stats-grid">
@@ -1053,7 +930,7 @@
         <!-- Deliveres -->
         <div id="form-deliveres" class="form-section">
             <div class="form-container">
-                <button class="back-btn" onclick="voltarDashboard()">← Voltar</button>
+                <button class="back-btn" onclick="mostrarForm('dashboard')">← Voltar</button>
                 <h2 style="margin-bottom: 20px; color: #333; font-size: 18px;">🛵 Deliveres</h2>
                 
                 <div class="stats-grid">
@@ -1142,7 +1019,7 @@
         <!-- Encomendas -->
         <div id="form-encomendas" class="form-section">
             <div class="form-container">
-                <button class="back-btn" onclick="voltarDashboard()">← Voltar</button>
+                <button class="back-btn" onclick="mostrarForm('dashboard')">← Voltar</button>
                 <h2 style="margin-bottom: 20px; color: #333; font-size: 18px;">📦 Encomendas</h2>
                 
                 <div class="stats-grid">
@@ -1230,73 +1107,10 @@
             </div>
         </div>
 
-        <!-- Agentes de Portaria -->
-        <div id="form-agentes-portaria" class="form-section">
-            <div class="form-container">
-                <button class="back-btn" onclick="mostrarForm('dashboard-admin')">← Voltar</button>
-                <h2 style="margin-bottom: 20px; color: #333; font-size: 18px;">🛡️ Agentes de Portaria</h2>
-                
-                <div class="agente-info">
-                    <strong>ℹ️ Gerenciamento de Agentes</strong><br>
-                    Cadastre agentes de portaria para acesso restrito ao sistema. Eles poderão registrar visitantes, deliveres e encomendas, mas não terão acesso ao financeiro, cadastro de moradores ou configurações.
-                </div>
-
-                <div class="stats-grid">
-                    <div class="stat-card orange"><h3>Total Agentes</h3><div class="value" id="agentes-total">0</div></div>
-                    <div class="stat-card green"><h3>Ativos</h3><div class="value" id="agentes-ativos">0</div></div>
-                    <div class="stat-card red"><h3>Inativos</h3><div class="value" id="agentes-inativos">0</div></div>
-                </div>
-                
-                <div class="tabs agentes-tabs">
-                    <button class="tab active" onclick="switchTabAgentes('lista')">Lista de Agentes</button>
-                    <button class="tab" onclick="switchTabAgentes('cadastrar')">Cadastrar Novo</button>
-                </div>
-                
-                <div id="tab-agentes-lista" class="tab-content active">
-                    <div class="table-container">
-                        <table id="tabela-agentes">
-                            <thead>
-                                <tr>
-                                    <th>Nome</th>
-                                    <th>Email</th>
-                                    <th>Status</th>
-                                    <th>Cadastrado em</th>
-                                    <th>Ações</th>
-                                </tr>
-                            </thead>
-                            <tbody id="lista-agentes-body"></tbody>
-                        </table>
-                    </div>
-                </div>
-                
-                <div id="tab-agentes-cadastrar" class="tab-content">
-                    <form id="agenteForm">
-                        <div class="form-group">
-                            <label>Nome Completo *</label>
-                            <input type="text" id="agente-nome" required placeholder="Nome do agente">
-                        </div>
-                        <div class="form-group">
-                            <label>Email *</label>
-                            <input type="email" id="agente-email" required placeholder="agente@email.com">
-                        </div>
-                        <div class="form-group">
-                            <label>Senha (mín. 6 caracteres) *</label>
-                            <input type="password" id="agente-senha" required placeholder="Crie uma senha" minlength="6">
-                        </div>
-                        <div class="form-group">
-                            <label>Confirmar Senha *</label>
-                            <input type="password" id="agente-senha-confirmar" required placeholder="Repita a senha">
-                        </div>
-                        <button type="submit" class="btn btn-orange">🛡️ Cadastrar Agente</button>
-                    </form>
-                </div>
-            </div>
-        </div>
-
         <!-- Financeiro -->
         <div id="form-financeiro" class="form-section">
             <div class="form-container">
-                <button class="back-btn" onclick="mostrarForm('dashboard-admin')">← Voltar</button>
+                <button class="back-btn" onclick="mostrarForm('dashboard')">← Voltar</button>
                 <h2 style="margin-bottom: 20px; color: #333; font-size: 18px;">💰 Financeiro</h2>
                 
                 <div class="stats-grid">
@@ -1357,7 +1171,7 @@
         <!-- Configurações -->
         <div id="form-configuracoes" class="form-section">
             <div class="form-container">
-                <button class="back-btn" onclick="mostrarForm('dashboard-admin')">← Voltar</button>
+                <button class="back-btn" onclick="mostrarForm('dashboard')">← Voltar</button>
                 <h2 style="margin-bottom: 20px; color: #333; font-size: 18px;">⚙️ Configurações</h2>
                 
                 <div class="config-section">
@@ -1367,7 +1181,6 @@
                         Visitantes hoje: <strong id="stats-visitantes-hoje">0</strong> | 
                         Deliveres hoje: <strong id="stats-deliveres-hoje">0</strong> | 
                         Encomendas: <strong id="stats-encomendas-pendentes">0</strong> |
-                        Agentes: <strong id="stats-agentes">0</strong> |
                         Lixeira: <strong id="stats-lixeira">0</strong>
                     </p>
                 </div>
@@ -1391,7 +1204,7 @@
         <!-- Lixeira -->
         <div id="form-lixeira" class="form-section">
             <div class="form-container">
-                <button class="back-btn" onclick="mostrarForm('dashboard-admin')">← Voltar</button>
+                <button class="back-btn" onclick="mostrarForm('dashboard')">← Voltar</button>
                 <h2 style="margin-bottom: 20px; color: #333; font-size: 18px;">🗑️ Lixeira</h2>
                 
                 <div class="lixeira-info">
@@ -1555,9 +1368,7 @@
         let auth = null;
         let condominioId = null;
         let usuarioLogado = null;
-        let tipoUsuario = null; // 'admin' ou 'agente'
         let isOnline = true;
-        let loginTypeAtual = 'admin';
 
         // Carregar configuração salva
         function carregarConfigFirebase() {
@@ -1614,7 +1425,9 @@
                 // Verificar autenticação
                 auth.onAuthStateChanged((user) => {
                     if (user) {
-                        verificarTipoUsuario(user.uid);
+                        usuarioLogado = user.displayName || user.email;
+                        condominioId = user.uid;
+                        mostrarForm('dashboard');
                     } else {
                         mostrarForm('login');
                     }
@@ -1631,7 +1444,7 @@
             const iconEl = document.getElementById('sync-icon');
             const textEl = document.getElementById('sync-text');
 
-                        if (isOnline) {
+            if (isOnline) {
                 statusEl.className = 'sync-status online';
                 iconEl.textContent = '🟢';
                 textEl.textContent = 'Online';
@@ -1652,110 +1465,24 @@
             }
         }
 
-        // ==================== VERIFICAÇÃO TIPO DE USUÁRIO ====================
-        function verificarTipoUsuario(uid) {
-            // Primeiro verifica se é admin (dono do condomínio)
-            db.ref(`condominios/${uid}`).once('value').then((snapshot) => {
-                if (snapshot.exists()) {
-                    // É administrador (dono do condomínio)
-                    tipoUsuario = 'admin';
-                    condominioId = uid;
-                    usuarioLogado = auth.currentUser.displayName || auth.currentUser.email;
-                    mostrarDashboard();
-                } else {
-                    // Verifica se é agente de portaria
-                    db.ref('agentes').child(uid).once('value').then((agenteSnap) => {
-                        if (agenteSnap.exists()) {
-                            const agenteData = agenteSnap.val();
-                            tipoUsuario = 'agente';
-                            condominioId = agenteData.condominioId;
-                            usuarioLogado = agenteData.nome;
-                            mostrarDashboard();
-                        } else {
-                            // Usuário não reconhecido
-                            auth.signOut();
-                            showError('Usuário não autorizado!');
-                        }
-                    });
-                }
-            });
-        }
-
         // ==================== NAVEGAÇÃO ====================
-        function switchLoginType(type) {
-            loginTypeAtual = type;
-            document.querySelectorAll('.login-type-btn').forEach(btn => btn.classList.remove('active'));
-            event.target.classList.add('active');
-            
-            const emailLabel = document.getElementById('login-email-label');
-            const submitBtn = document.getElementById('login-submit-btn');
-            
-            if (type === 'admin') {
-                emailLabel.textContent = 'Email do Condomínio';
-                submitBtn.textContent = 'Entrar como Administrador';
-                submitBtn.className = 'btn';
-            } else {
-                emailLabel.textContent = 'Email do Agente';
-                submitBtn.textContent = 'Entrar como Agente de Portaria';
-                submitBtn.className = 'btn btn-orange';
-            }
-        }
-
-        function mostrarDashboard() {
-            if (tipoUsuario === 'admin') {
-                document.getElementById('dashboard-admin').classList.add('active');
-                document.getElementById('user-name-admin').textContent = usuarioLogado;
-                document.getElementById('header-user-info').style.display = 'flex';
-                document.getElementById('header-user-name').textContent = usuarioLogado;
-                document.getElementById('header-user-type').textContent = 'ADMIN';
-                document.getElementById('header-user-type').className = 'user-type-badge admin';
-            } else {
-                document.getElementById('dashboard-agente').classList.add('active');
-                document.getElementById('user-name-agente').textContent = usuarioLogado;
-                document.getElementById('header-user-info').style.display = 'flex';
-                document.getElementById('header-user-name').textContent = usuarioLogado;
-                document.getElementById('header-user-type').textContent = 'AGENTE';
-                document.getElementById('header-user-type').className = 'user-type-badge agente';
-            }
-        }
-
-        function voltarDashboard() {
-            if (tipoUsuario === 'admin') {
-                mostrarForm('dashboard-admin');
-            } else {
-                mostrarForm('dashboard-agente');
-            }
-        }
-
         function mostrarForm(formName) {
             document.querySelectorAll('.form-section, .dashboard').forEach(el => el.classList.remove('active'));
             
-            if (formName === 'dashboard-admin' && tipoUsuario === 'admin') {
-                document.getElementById('dashboard-admin').classList.add('active');
+            if (formName === 'dashboard') {
+                document.getElementById('dashboard').classList.add('active');
+                document.getElementById('user-name').textContent = usuarioLogado || 'Usuário';
                 document.getElementById('header-user-info').style.display = 'flex';
-            } else if (formName === 'dashboard-agente' && tipoUsuario === 'agente') {
-                document.getElementById('dashboard-agente').classList.add('active');
-                document.getElementById('header-user-info').style.display = 'flex';
+                document.getElementById('header-user-name').textContent = usuarioLogado || '-';
             } else {
                 document.getElementById(`form-${formName}`).classList.add('active');
-                if (formName !== 'login' && formName !== 'cadastro-usuario' && formName !== 'config-firebase') {
-                    document.getElementById('header-user-info').style.display = 'flex';
-                } else {
-                    document.getElementById('header-user-info').style.display = 'none';
-                }
+                document.getElementById('header-user-info').style.display = 'none';
             }
             
             hideMessages();
             
             // Carregar dados específicos
-            if (formName === 'lista-moradores') {
-                carregarMoradores();
-                // Esconde botões de admin se for agente
-                const acoesAdmin = document.getElementById('acoes-moradores-admin');
-                if (acoesAdmin) {
-                    acoesAdmin.style.display = tipoUsuario === 'admin' ? 'flex' : 'none';
-                }
-            }
+            if (formName === 'lista-moradores') carregarMoradores();
             if (formName === 'visitantes') {
                 carregarMoradoresSelect('visitante-morador');
                 carregarVisitantes();
@@ -1781,7 +1508,6 @@
             }
             if (formName === 'configuracoes') carregarEstatisticas();
             if (formName === 'lixeira') carregarLixeira();
-            if (formName === 'agentes-portaria') carregarAgentes();
             if (formName === 'cadastro-morador') {
                 document.getElementById('morador-user-logado').textContent = usuarioLogado;
                 document.getElementById('morador-id').value = 'M' + Date.now().toString().slice(-6);
@@ -1798,8 +1524,9 @@
             
             auth.signInWithEmailAndPassword(email, senha)
                 .then((userCredential) => {
-                    // Verificação de tipo é feita no onAuthStateChanged
+                    usuarioLogado = userCredential.user.displayName || email;
                     mostrarLoading(false);
+                    showSuccess('Bem-vindo!');
                 })
                 .catch((error) => {
                     mostrarLoading(false);
@@ -1847,160 +1574,7 @@
             auth.signOut().then(() => {
                 usuarioLogado = null;
                 condominioId = null;
-                tipoUsuario = null;
                 mostrarForm('login');
-            });
-        }
-
-        // ==================== AGENTES DE PORTARIA ====================
-        function getAgentesRef() {
-            return db.ref('agentes');
-        }
-
-        document.getElementById('agenteForm').addEventListener('submit', function(e) {
-            e.preventDefault();
-            
-            const nome = document.getElementById('agente-nome').value.trim();
-            const email = document.getElementById('agente-email').value.trim();
-            const senha = document.getElementById('agente-senha').value;
-            const confirmar = document.getElementById('agente-senha-confirmar').value;
-            
-            if (senha !== confirmar) { showError('Senhas não conferem!'); return; }
-            if (senha.length < 6) { showError('Mínimo 6 caracteres!'); return; }
-            
-            mostrarLoading(true);
-            
-            // Criar usuário no Authentication
-            // Nota: Isso requer que você habilite a criação de múltiplos usuários no Firebase
-            // ou use Cloud Functions. Aqui usamos uma abordagem alternativa:
-            
-            // Gerar ID único para o agente
-            const agenteId = 'AGENTE_' + Date.now();
-            const agenteData = {
-                id: agenteId,
-                nome: nome,
-                email: email,
-                senhaTemporaria: senha, // Em produção, use hash!
-                condominioId: condominioId,
-                condominioNome: usuarioLogado,
-                status: 'ativo',
-                criadoEm: new Date().toISOString(),
-                criadoPor: usuarioLogado
-            };
-            
-            // Salvar dados do agente
-            getAgentesRef().child(agenteId).set(agenteData)
-                .then(() => {
-                    // Criar credenciais de login no nó separado para autenticação customizada
-                    return db.ref(`agentes_login/${btoa(email)}`).set({
-                        agenteId: agenteId,
-                        senha: senha, // Em produção, hash!
-                        email: email
-                    });
-                })
-                .then(() => {
-                    mostrarLoading(false);
-                    showSuccess('Agente cadastrado! Email: ' + email + ' | Senha: ' + senha);
-                    this.reset();
-                    carregarAgentes();
-                    
-                    // Mostrar instruções
-                    alert(`Agente cadastrado com sucesso!\n\nEmail: ${email}\nSenha: ${senha}\n\nO agente pode fazer login selecionando "Agente de Portaria" na tela de login.`);
-                })
-                .catch((error) => {
-                    mostrarLoading(false);
-                    showError('Erro: ' + error.message);
-                });
-        });
-
-        function carregarAgentes() {
-            getAgentesRef().orderByChild('condominioId').equalTo(condominioId).once('value')
-                .then((snapshot) => {
-                    const data = snapshot.val() || {};
-                    const lista = Object.values(data);
-                    
-                    // Atualizar estatísticas
-                    const ativos = lista.filter(a => a.status === 'ativo').length;
-                    const inativos = lista.filter(a => a.status === 'inativo').length;
-                    
-                    document.getElementById('agentes-total').textContent = lista.length;
-                    document.getElementById('agentes-ativos').textContent = ativos;
-                    document.getElementById('agentes-inativos').textContent = inativos;
-                    
-                    // Renderizar tabela
-                    const tbody = document.getElementById('lista-agentes-body');
-                    tbody.innerHTML = '';
-                    
-                    lista.sort((a, b) => new Date(b.criadoEm) - new Date(a.criadoEm)).forEach(agente => {
-                        const tr = document.createElement('tr');
-                        tr.innerHTML = `
-                            <td>${agente.nome}</td>
-                            <td>${agente.email}</td>
-                            <td><span class="badge badge-${agente.status}">${agente.status}</span></td>
-                            <td>${new Date(agente.criadoEm).toLocaleDateString('pt-BR')}</td>
-                            <td class="action-btns">
-                                <button class="btn-icon" onclick="toggleStatusAgente('${agente.id}')" title="${agente.status === 'ativo' ? 'Desativar' : 'Ativar'}">
-                                    ${agente.status === 'ativo' ? '🚫' : '✅'}
-                                </button>
-                                <button class="btn-icon btn-delete" onclick="excluirAgente('${agente.id}')" title="Excluir">🗑️</button>
-                            </td>
-                        `;
-                        tbody.appendChild(tr);
-                    });
-                })
-                .catch((error) => {
-                    showError('Erro ao carregar agentes: ' + error.message);
-                });
-        }
-
-        function toggleStatusAgente(agenteId) {
-            getAgentesRef().child(agenteId).once('value').then((snapshot) => {
-                const agente = snapshot.val();
-                const novoStatus = agente.status === 'ativo' ? 'inativo' : 'ativo';
-                
-                mostrarLoading(true);
-                getAgentesRef().child(agenteId).update({
-                    status: novoStatus,
-                    alteradoEm: new Date().toISOString(),
-                    alteradoPor: usuarioLogado
-                })
-                .then(() => {
-                    mostrarLoading(false);
-                    showSuccess(`Agente ${novoStatus === 'ativo' ? 'ativado' : 'desativado'}!`);
-                    carregarAgentes();
-                })
-                .catch((error) => {
-                    mostrarLoading(false);
-                    showError('Erro: ' + error.message);
-                });
-            });
-        }
-
-        function excluirAgente(agenteId) {
-            if (!confirm('Tem certeza que deseja excluir este agente permanentemente?')) return;
-            
-            mostrarLoading(true);
-            
-            // Remover de ambos os nós
-            const updates = {};
-            updates[`agentes/${agenteId}`] = null;
-            
-            getAgentesRef().child(agenteId).once('value').then((snapshot) => {
-                const agente = snapshot.val();
-                if (agente && agente.email) {
-                    updates[`agentes_login/${btoa(agente.email)}`] = null;
-                }
-                
-                return db.ref().update(updates);
-            })
-            .then(() => {
-                mostrarLoading(false);
-                showSuccess('Agente excluído!');
-                carregarAgentes();
-            })
-            .catch((error) => {
-                mostrarLoading(false);
-                showError('Erro: ' + error.message);
             });
         }
 
@@ -2059,8 +1633,6 @@
             
             lista.forEach(m => {
                 const tr = document.createElement('tr');
-                const isAdmin = tipoUsuario === 'admin';
-                
                 tr.innerHTML = `
                     <td>${m.id?.substring(0, 8) || '-'}</td>
                     <td>${m.nome}</td>
@@ -2068,10 +1640,8 @@
                     <td>${m.rua}, ${m.numero}</td>
                     <td><span class="badge badge-${m.situacao}">${m.situacao}</span></td>
                     <td class="action-btns">
-                        ${isAdmin ? `
-                            <button class="btn-icon btn-edit" onclick="editarMorador('${m.id}')">✏️</button>
-                            <button class="btn-icon btn-delete" onclick="excluirMorador('${m.id}')">🗑️</button>
-                        ` : '<span style="font-size: 10px; color: #999;">Somente visualização</span>'}
+                        <button class="btn-icon btn-edit" onclick="editarMorador('${m.id}')">✏️</button>
+                        <button class="btn-icon btn-delete" onclick="excluirMorador('${m.id}')">🗑️</button>
                     </td>
                 `;
                 tbody.appendChild(tr);
@@ -2112,7 +1682,7 @@
                 numeroContrato: document.getElementById('numero-contrato').value || null
             };
             
-            salvarMorador(morador).then((sucesso) => {
+                       salvarMorador(morador).then((sucesso) => {
                 if (sucesso) {
                     this.reset();
                     document.getElementById('morador-id').value = 'M' + Date.now().toString().slice(-6);
@@ -2122,11 +1692,6 @@
         });
 
         function editarMorador(id) {
-            if (tipoUsuario !== 'admin') {
-                showError('Apenas administradores podem editar moradores!');
-                return;
-            }
-            
             getMoradoresRef().child(id).once('value').then((snapshot) => {
                 const m = snapshot.val();
                 if (!m) return;
@@ -2143,11 +1708,6 @@
 
         document.getElementById('form-editar-morador').addEventListener('submit', function(e) {
             e.preventDefault();
-            if (tipoUsuario !== 'admin') {
-                showError('Apenas administradores podem editar!');
-                return;
-            }
-            
             const id = document.getElementById('edit-id').value;
             
             const atualizacoes = {
@@ -2174,17 +1734,13 @@
         });
 
         function excluirMorador(id) {
-            if (tipoUsuario !== 'admin') {
-                showError('Apenas administradores podem excluir!');
-                return;
-            }
-            
             if (!confirm('Mover este morador para a lixeira?')) return;
             
             getMoradoresRef().child(id).once('value').then((snapshot) => {
                 const morador = snapshot.val();
                 if (!morador) return;
                 
+                // Adicionar à lixeira
                 const itemLixeira = {
                     tipo: 'morador',
                     id: id,
@@ -2196,6 +1752,7 @@
                 
                 mostrarLoading(true);
                 
+                // Salvar na lixeira e remover dos ativos
                 const updates = {};
                 updates[`condominios/${condominioId}/lixeira/${Date.now()}`] = itemLixeira;
                 updates[`condominios/${condominioId}/moradores/${id}`] = null;
@@ -2269,8 +1826,7 @@
                 dataEntrada: new Date().toISOString(),
                 status: 'dentro',
                 tipo: 'entrada',
-                registradoPor: usuarioLogado,
-                tipoUsuario: tipoUsuario
+                registradoPor: usuarioLogado
             };
             
             mostrarLoading(true);
@@ -2296,8 +1852,7 @@
                 status: 'saida',
                 dataSaida: new Date().toISOString(),
                 tipo: 'saida',
-                saidaRegistradaPor: usuarioLogado,
-                saidaTipoUsuario: tipoUsuario
+                saidaRegistradaPor: usuarioLogado
             })
             .then(() => {
                 mostrarLoading(false);
@@ -2374,11 +1929,10 @@
                     const tempoStr = tempoMin < 60 ? `${tempoMin}min` : `${Math.floor(tempoMin/60)}h${tempoMin%60}min`;
                     const alerta = tempoMin > 15 ? 'style="color:#e74c3c;font-weight:bold;"' : '';
                     
-                    const badges = { ifood: 'background:#ea1d2c;color:white', uber: 'background:#276ef7;color:white', rappi: 'background:#ff441f;color:white', '99': 'background:#fc0;color:black' };
+                    const badges = { ifood: 'badge-ifood', uber: 'badge-uber', rappi: 'badge-rappi', '99': 'badge-99' };
                     
-                    const tr = document.createElement('tr');
                     tr.innerHTML = `
-                        <td><span class="badge" style="${badges[d.plataforma] || 'background:#95a5a6;color:white'}">${d.plataforma}</span></td>
+                        <td><span class="badge ${badges[d.plataforma] || 'badge-outros'}">${d.plataforma}</span></td>
                         <td>${d.nome}</td>
                         <td>${d.moradorNome}</td>
                         <td ${alerta}>${tempoStr}</td>
@@ -2405,8 +1959,7 @@
                 moradorNome: moradorNome.split(' - ')[0],
                 dataEntrada: new Date().toISOString(),
                 status: 'entregando',
-                registradoPor: usuarioLogado,
-                tipoUsuario: tipoUsuario
+                registradoPor: usuarioLogado
             };
             
             mostrarLoading(true);
@@ -2431,8 +1984,7 @@
             getDeliveresRef().child(id).update({
                 status: 'concluido',
                 dataSaida: new Date().toISOString(),
-                concluidoPor: usuarioLogado,
-                concluidoTipoUsuario: tipoUsuario
+                concluidoPor: usuarioLogado
             })
             .then(() => {
                 mostrarLoading(false);
@@ -2452,8 +2004,7 @@
             getDeliveresRef().child(id).update({
                 status: 'cancelado',
                 dataSaida: new Date().toISOString(),
-                canceladoPor: usuarioLogado,
-                canceladoTipoUsuario: tipoUsuario
+                canceladoPor: usuarioLogado
             })
             .then(() => {
                 mostrarLoading(false);
@@ -2507,7 +2058,7 @@
                         <td ${diasStyle}>${dias}d</td>
                         <td>
                             <button class="btn-icon btn-edit" onclick="abrirModalEntrega('${e.id}')">✓</button>
-                            ${tipoUsuario === 'admin' ? `<button class="btn-icon btn-delete" onclick="excluirEncomenda('${e.id}')">🗑️</button>` : ''}
+                            <button class="btn-icon btn-delete" onclick="excluirEncomenda('${e.id}')">🗑️</button>
                         </td>
                     `;
                     tbody.appendChild(tr);
@@ -2528,8 +2079,7 @@
                 moradorNome: moradorNome.split(' - ')[0],
                 recebedor: document.getElementById('encomenda-recebedor').value.trim(),
                 status: 'pendente',
-                recebidoPor: usuarioLogado,
-                tipoUsuario: tipoUsuario
+                recebidoPor: usuarioLogado
             };
             
             mostrarLoading(true);
@@ -2566,8 +2116,7 @@
                 status: 'entregue',
                 dataEntrega: new Date().toISOString(),
                 quemRetirou: document.getElementById('entrega-quem-retirou').value.trim(),
-                entreguePor: usuarioLogado,
-                entregueTipoUsuario: tipoUsuario
+                entreguePor: usuarioLogado
             })
             .then(() => {
                 mostrarLoading(false);
@@ -2582,11 +2131,6 @@
         });
 
         function excluirEncomenda(id) {
-            if (tipoUsuario !== 'admin') {
-                showError('Apenas administradores podem excluir!');
-                return;
-            }
-            
             if (!confirm('Mover para lixeira?')) return;
             
             getEncomendasRef().child(id).once('value').then((snapshot) => {
@@ -2833,26 +2377,21 @@
         }
 
         function limparLixeira() {
-            getLixeiraRef().once('value').then((snapshot) => {
-                const data = snapshot.val() || {};
-                const lista = Object.values(data);
-                
-                if (lista.length === 0) { showError('Lixeira vazia!'); return; }
-                if (!confirm('⚠️ ATENÇÃO: Isso apagará PERMANENTEMENTE todos os itens da lixeira!\n\nConfirma?')) return;
-                if (!confirm('Tem certeza absoluta? Esta ação não pode ser desfeita.')) return;
-                
-                mostrarLoading(true);
-                getLixeiraRef().remove()
-                    .then(() => {
-                        mostrarLoading(false);
-                        showSuccess('Lixeira esvaziada!');
-                        carregarLixeira();
-                    })
-                    .catch((error) => {
-                        mostrarLoading(false);
-                        showError('Erro: ' + error.message);
-                    });
-            });
+            if (lista.length === 0) { showError('Lixeira vazia!'); return; }
+            if (!confirm('⚠️ ATENÇÃO: Isso apagará PERMANENTEMENTE todos os itens da lixeira!\n\nConfirma?')) return;
+            if (!confirm('Tem certeza absoluta? Esta ação não pode ser desfeita.')) return;
+            
+            mostrarLoading(true);
+            getLixeiraRef().remove()
+                .then(() => {
+                    mostrarLoading(false);
+                    showSuccess('Lixeira esvaziada!');
+                    carregarLixeira();
+                })
+                .catch((error) => {
+                    mostrarLoading(false);
+                    showError('Erro: ' + error.message);
+                });
         }
 
         // ==================== UTILITÁRIOS ====================
@@ -2948,14 +2487,6 @@
             document.getElementById(`tab-lixeira-${tab}`).classList.add('active');
         }
 
-        function switchTabAgentes(tab) {
-            document.querySelectorAll('#form-agentes-portaria .tab').forEach(t => t.classList.remove('active'));
-            document.querySelectorAll('#form-agentes-portaria .tab-content').forEach(t => t.classList.remove('active'));
-            event.target.classList.add('active');
-            document.getElementById(`tab-agentes-${tab}`).classList.add('active');
-            if (tab === 'lista') carregarAgentes();
-        }
-
         function toggleLocatarioFields() {
             const situacao = document.getElementById('morador-situacao').value;
             const fields = document.getElementById('locatario-fields');
@@ -2993,8 +2524,7 @@
                 getDeliveresRef().once('value'),
                 getEncomendasRef().once('value'),
                 getLancamentosRef().once('value'),
-                getLixeiraRef().once('value'),
-                getAgentesRef().orderByChild('condominioId').equalTo(condominioId).once('value')
+                getLixeiraRef().once('value')
             ];
             
             Promise.all(promises).then(results => {
@@ -3005,10 +2535,8 @@
                     encomendas: results[3].val() || {},
                     lancamentos: results[4].val() || {},
                     lixeira: results[5].val() || {},
-                    agentes: results[6].val() || {},
                     exportadoEm: new Date().toISOString(),
-                    exportadoPor: usuarioLogado,
-                    tipoUsuario: tipoUsuario
+                    exportadoPor: usuarioLogado
                 };
                 
                 const blob = new Blob([JSON.stringify(dados, null, 2)], { type: 'application/json' });
@@ -3048,7 +2576,6 @@
                     if (dados.encomendas) updates[`condominios/${condominioId}/encomendas`] = dados.encomendas;
                     if (dados.lancamentos) updates[`condominios/${condominioId}/lancamentos`] = dados.lancamentos;
                     if (dados.lixeira) updates[`condominios/${condominioId}/lixeira`] = dados.lixeira;
-                    // Não importa agentes por segurança
                     
                     db.ref().update(updates)
                         .then(() => {
@@ -3073,23 +2600,11 @@
         function limparTodosDados() {
             if (!confirm('⚠️ ATENÇÃO: Isso apagará TODOS os dados permanentemente!\n\nConfirma?')) return;
             if (!confirm('Tem certeza absoluta? Esta ação não pode ser desfeita.')) return;
-            if (!confirm('Última chance! Todos os moradores, visitantes, encomendas, financeiro, agentes e lixeira serão apagados. Continuar?')) return;
+            if (!confirm('Última chance! Todos os moradores, visitantes, encomendas, financeiro e lixeira serão apagados. Continuar?')) return;
             
             mostrarLoading(true);
             
             db.ref(`condominios/${condominioId}`).remove()
-                .then(() => {
-                    // Também remove agentes associados
-                    return getAgentesRef().orderByChild('condominioId').equalTo(condominioId).once('value');
-                })
-                .then((snapshot) => {
-                    const updates = {};
-                    snapshot.forEach((child) => {
-                        updates[`agentes/${child.key}`] = null;
-                        updates[`agentes_login/${btoa(child.val().email)}`] = null;
-                    });
-                    return db.ref().update(updates);
-                })
                 .then(() => {
                     mostrarLoading(false);
                     showSuccess('Todos os dados apagados!');
@@ -3107,8 +2622,7 @@
                 getVisitantesRef().once('value'),
                 getDeliveresRef().once('value'),
                 getEncomendasRef().once('value'),
-                getLixeiraRef().once('value'),
-                getAgentesRef().orderByChild('condominioId').equalTo(condominioId).once('value')
+                getLixeiraRef().once('value')
             ];
             
             Promise.all(promises).then(results => {
@@ -3122,7 +2636,6 @@
                 document.getElementById('stats-encomendas-pendentes').textContent = 
                     Object.values(results[3].val() || {}).filter(e => e.status === 'pendente').length;
                 document.getElementById('stats-lixeira').textContent = results[4].numChildren();
-                document.getElementById('stats-agentes').textContent = results[5].numChildren();
             });
         }
 
